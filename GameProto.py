@@ -5,6 +5,9 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
+class Unit:
+    def __init__(self, pos, type=None):
+        self.position = pos
 
 from pygame.locals import (
     K_UP,
@@ -18,6 +21,10 @@ from pygame.locals import (
 
 pygame.init()
 clock = pygame.time.Clock()
+
+entities=[]
+entities.append(Unit((4,7)))    
+entities.append(Unit((2,6)))
 
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 640
@@ -66,12 +73,7 @@ while running:
                 width=2
             )
 
-    BSS = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space Game/Blue Spaceship.png")
-    width = BSS.get_rect().width
-    height = BSS.get_rect().height
-    BSS = pygame.transform.scale(BSS, (int(width)))
-
-    screen.blit(BSS, (200,200))
+   
     
   
  
@@ -97,13 +99,82 @@ while running:
                 width=0
             )
     
-    # Flip the display
-    pygame.display.flip()
+    for entity in entities:    
+        currPos = entity.position
+BSS = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space game Images/Blue Spaceship.png", (100,100,255), 
+            (sub_width + currPos[0]*block_size + offset + block_size/2, currPos[1]*block_size + offset + block_size/2),
+            block_size*0.35)
+    
+mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
+mouseyy = round((mousey - offset - block_size/2)/block_size)
+if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+        pygame.draw.rect(
+                screen,
+                (200, 200, 0),
+                (
+                    mousexx*block_size + (sub_width + offset), 
+                    mouseyy*block_size + offset,
+                    block_draw_size, block_draw_size
+                ),
+                width=0
+            )
 
-    clock.tick(60)
+   
+
+
+    # Flip the display
+        pygame.display.flip()
+
+clock.tick(60)
 
 # Done! Time to quit.
 pygame.quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
