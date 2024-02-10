@@ -7,7 +7,6 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
-
 class Unit:
     def __init__(self, pos, type=None):
         self.position = pos
@@ -66,9 +65,9 @@ while running:
             # If the Esc key is pressed, then exit the main loop
             if event.key == K_ESCAPE:
                 running = False
-        if event.type == pygame.QUIT:
+        if event.type == QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == MOUSEBUTTONDOWN:
             if(pygame.mouse.get_pressed()[0]):
                 if(mousexx>=0 and mouseyy>=0 and mousexx < grid_count and mouseyy < grid_count):
                     previous = selection
@@ -82,10 +81,6 @@ while running:
                             if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count):
                                 highlight.append((xx,yy))
 
-
-
-
-    # Fill the background with white
 
     current_ship = "Current Ship"
 
@@ -101,7 +96,6 @@ while running:
 
 
     screen.fill((0, 0, 0))
-
 
     sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
     border_width = 5
@@ -131,7 +125,6 @@ while running:
     for y in range(grid_count):
         for x in range(grid_count):
             grid_color = (222, 222, 222)
-
             pygame.draw.rect(
                 screen,
                 grid_color,
@@ -141,6 +134,36 @@ while running:
                 ),
                 width=2
             )
+
+   
+    
+  
+ 
+    
+
+    # Draw menu borders
+    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
+    
+    
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+        pygame.draw.rect(
+                screen,
+                (200, 200, 0),
+                (
+                    round(mousexx)*block_size + (sub_width + offset), 
+                    round(mouseyy)*block_size + offset,
+                    block_draw_size, block_draw_size
+                ),
+                width=0
+            )
+    BSS = pygame.image.load("./Images/Blue Spaceship.png")
+    width = BSS.get_rect().width
+    height = BSS.get_rect().height
+    BSS = pygame.transform.scale(BSS, (block_size,block_size))
 
     for x,y in highlight:
         grid_color = (100, 100, 255, 100)
@@ -155,15 +178,14 @@ while running:
         )
 
     #Map Entities
-    for entity in entities:
+    for entity in entities:    
         currPos = entity.position
-        pygame.draw.circle(screen, (100,100,255), 
-            (sub_width + currPos[0]*block_size + offset + block_size/2, currPos[1]*block_size + offset + block_size/2),
-            block_size*0.35)
-
-    mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
-    mouseyy = round((mousey - offset - block_size/2)/block_size)
-
+        screen.blit( BSS, 
+            (sub_width + currPos[0]*block_size + offset, 
+            currPos[1]*block_size + offset)
+        )
+    
+    
     # Draw menu borders
     pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
@@ -192,5 +214,17 @@ while running:
     clock.tick(60)
 # Done! Time to quit.
 pygame.quit()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
