@@ -98,16 +98,22 @@ while running:
                 ),
                 width=0
             )
-    
+    BSS = pygame.image.load("./Images/Blue Spaceship.png")
+    width = BSS.get_rect().width
+    height = BSS.get_rect().height
+    BSS = pygame.transform.scale(BSS, (block_size,block_size))
+
+
     for entity in entities:    
         currPos = entity.position
-BSS = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space game Images/Blue Spaceship.png", (100,100,255), 
-            (sub_width + currPos[0]*block_size + offset + block_size/2, currPos[1]*block_size + offset + block_size/2),
-            block_size*0.35)
+        screen.blit( BSS, 
+            (sub_width + currPos[0]*block_size + offset, 
+            currPos[1]*block_size + offset)
+        )
     
-mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
-mouseyy = round((mousey - offset - block_size/2)/block_size)
-if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+    mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
+    mouseyy = round((mousey - offset - block_size/2)/block_size)
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
         pygame.draw.rect(
                 screen,
                 (200, 200, 0),
