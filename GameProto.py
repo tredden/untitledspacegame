@@ -23,6 +23,7 @@ from pygame.locals import (
     K_RIGHT,
     K_ESCAPE,
     KEYDOWN,
+    MOUSEBUTTONDOWN,
     QUIT,
 )
 
@@ -64,9 +65,9 @@ while running:
             # If the Esc key is pressed, then exit the main loop
             if event.key == K_ESCAPE:
                 running = False
-        if event.type == pygame.QUIT:
+        if event.type == QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == MOUSEBUTTONDOWN:
             if(pygame.mouse.get_pressed()[0]):
                 if(mousexx>=0 and mouseyy>=0 and mousexx < grid_count and mouseyy < grid_count):
                     previous = selection
@@ -89,29 +90,12 @@ while running:
     max_shields = 75
     attack = 10
 
-    # Fill the background with white
-
-    current_ship = "Current Ship"
-
-    health = 100
-    max_health = 100
-    shields = 75
-    max_shields = 75
-    attack = 10
-
     health_txt = "Health: " + str(health) + "/" + str(max_health)
     shields_txt = "Shields: " + str(shields) + "/" + str(max_shields)
     attack_txt = "Attack: " + str(attack)
 
 
     screen.fill((0, 0, 0))
-
-    sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
-    border_width = 5
-    #grid_offset = 25
-    grid_count = 8
-    block_size = 73
-    block_draw_size = block_size + 2
 
     sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
     border_width = 5
@@ -141,10 +125,9 @@ while running:
     for y in range(grid_count):
         for x in range(grid_count):
             grid_color = (222, 222, 222)
-
             pygame.draw.rect(
                 screen,
-                (222, 222, 222),
+                grid_color,
                 (
                     sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
                     block_draw_size, block_draw_size
@@ -194,6 +177,7 @@ while running:
             width=2
         )
 
+    #Map Entities
     for entity in entities:    
         currPos = entity.position
         screen.blit( BSS, 
@@ -201,9 +185,7 @@ while running:
             currPos[1]*block_size + offset)
         )
     
-    mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
-    mouseyy = round((mousey - offset - block_size/2)/block_size)
-
+    
     # Draw menu borders
     pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
