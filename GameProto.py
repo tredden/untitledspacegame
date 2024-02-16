@@ -7,7 +7,6 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
-font = pygame.font.Font(pygame.font.get_default_font(), 24)
 
 class Unit:
     def __init__(self, pos, type=None):
@@ -31,13 +30,13 @@ class Ship:
         self.max_shields = max_shields
         self.attack = attack
     
-        def info(self):
-            ship_txt = "Current Ship: " + self.name
-            health_txt = "Health: " + str(self.health) + "/" + str(self.max_health)
-            shields_txt = "Shields: " + str(self.shields) + "/" + str(self.max_shields)
-            attack_txt = "Attack: " + str(self.attack)
-            
-            return [ship_txt, health_txt, shields_txt, attack_txt]
+    def info(self):
+        ship_txt = self.name
+        health_txt = "Health: " + str(self.health) + "/" + str(self.max_health)
+        shields_txt = "Shields: " + str(self.shields) + "/" + str(self.max_shields)
+        attack_txt = "Attack: " + str(self.attack)
+        
+        return [ship_txt, health_txt, shields_txt, attack_txt]
 
 
 
@@ -65,12 +64,11 @@ SCREEN_HEIGHT = 640
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
-ship = Ship((2,6),"Ship 1", 50, 100, 75, 75, 20)
-ship = Ship((4,2),"Ship 1", 50, 100, 75, 75, 20)
+ship1 = Ship((2,6),"Ship 1", 50, 100, 75, 75, 20)
+ship2 = Ship((4,2),"Ship 2", 50, 100, 75, 75, 20)
 entities=[]
-entities.append(ship)    
-entities.append(ship)
-
+entities.append(ship1)    
+entities.append(ship2)
 highlight=[]
 selection=None
 
@@ -107,15 +105,17 @@ while running:
                 if(mousexx>=0 and mouseyy>=0 and mousexx < grid_count and mouseyy < grid_count):
                     previous = selection
                     selection = (mousexx,mouseyy)
-                    if(any([selection==x.position for x in entities])):
-                        selected == True
-                        info = x.info()
-                        highlight.clear()
-                        highlight.append(selection)
-                        for nabe in nabes:
-                            xx,yy = (selection[0]+nabe[0],selection[1]+nabe[1])
-                            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count):
-                                highlight.append((xx,yy))
+                    for x in entities:
+                        if selection==x.position:
+                            info = x.info()
+                            print(info)
+                            highlight.clear()
+                            highlight.append(selection)
+                            for nabe in nabes:
+                                xx,yy = (selection[0]+nabe[0],selection[1]+nabe[1])
+                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count):
+                                    highlight.append((xx,yy))
+                            break
 
 
 
@@ -135,23 +135,22 @@ while running:
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
+    
     # Draw menu borders
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
-
-  
-
+    font = pygame.font.Font(pygame.font.get_default_font(), 24)
 
 
-    if selected == True:
-        i = 0
+    i = 0
+    if selection != None:
         for stat in info:
             display = pygame.font.Font.render(font, stat, True, (255, 255, 255))
             if i == 0:
                 screen.blit(display, (20, 20)) 
             else:
                 screen.blit(display, (20, sub_width + i))
-                i += 50  
+            i += 50  
 
 
     for y in range(grid_count):
