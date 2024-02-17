@@ -11,6 +11,7 @@ class Unit:
     def __init__(self, pos, type=None):
         self.position = pos
         self.movement_range = 3
+        self.attack_range = 2
         self.name = "Current Ship"
 
 class Map:
@@ -41,6 +42,7 @@ entities.append(Unit((4,7)))
 entities.append(Unit((2,6)))
 
 move_highlight=[]
+attack_highlight=[]
 selection=None
 current_ship = None
 
@@ -86,19 +88,37 @@ while running:
                     if(new_selection):
                         move_highlight.clear()
                         move_highlight.append(selection)
+                        attack_highlight.clear()
                         search=[(selection, current_ship.movement_range)]
+                        search2=[]
                         done=set()
                         while search:
-                            currPos, moves = search.pop()
-                            if(currPos in done or moves <= 0):
+                            currPos, moves = search.pop(0)
+                            if(currPos in done):
+                                continue
+                            if(moves <= 0):
+                                search2.append([currPos,current_ship.attack_range])
                                 continue
                             done.add(currPos)
                             for nabe in nabes:
                                 xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
-                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count):
-                                    if(all(x.position!=(xx,yy) for x in entities)):
+                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                                    if(all(thing.position!=(xx,yy) for thing in entities)):
                                         move_highlight.append((xx,yy))
                                         search.append(((xx,yy),moves-1))
+                        
+                        while search2:
+                            currPos, atk = search2.pop(0)
+                            if(currPos in done or atk <= 0):
+                                continue
+                            done.add(currPos)
+                            for nabe in nabes:
+                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                                    #if(all(thing.position!=(xx,yy) for thing in entities)):
+                                    attack_highlight.append((xx,yy))
+                                    search2.append(((xx,yy),atk-1))
+                        
                     else:
                         if(selection in move_highlight):
                             current_ship.position = selection
@@ -124,8 +144,8 @@ while running:
     border_width = 5
     #grid_offset = 25
     grid_count = 8
-    block_size = 73
-    block_draw_size = block_size + 2
+    block_size = 75
+    #block_draw_size = block_size + 2
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
@@ -154,12 +174,34 @@ while running:
                 grid_color,
                 (
                     sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                    block_draw_size, block_draw_size
+                    block_size, block_size
                 ),
                 width=2
             )
 
-   
+    for x,y in move_highlight:
+        grid_color = (100, 100, 255, 100)
+        pygame.draw.rect(
+            screen,
+            grid_color,
+            (
+                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                block_draw_size, block_draw_size
+            ),
+            width=2
+        )
+    
+    for x,y in attack_highlight:
+        grid_color = (255, 100, 100, 100)
+        pygame.draw.rect(
+            screen,
+            grid_color,
+            (
+                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                block_draw_size, block_draw_size
+            ),
+            width=2
+        )
     
   
  
@@ -189,17 +231,7 @@ while running:
     height = BSS.get_rect().height
     BSS = pygame.transform.scale(BSS, (block_size,block_size))
 
-    for x,y in move_highlight:
-        grid_color = (100, 100, 255, 100)
-        pygame.draw.rect(
-            screen,
-            grid_color,
-            (
-                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                block_draw_size, block_draw_size
-            ),
-            width=2
-        )
+    
 
     #Map Entities
     for entity in entities:    
