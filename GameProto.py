@@ -107,7 +107,7 @@ while running:
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 
-    image = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space game Images/Blue Spaceship.png")
+    image = pygame.image.load("./Images/Blue Spaceship.png")
     image = pygame.transform.scale(image,(200,200))
 
 
