@@ -106,8 +106,10 @@ while running:
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
+
     image = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space game Images/Blue Spaceship.png")
     image = pygame.transform.scale(image,(200,200))
+
 
 
     # Draw menu borders
@@ -123,6 +125,7 @@ while running:
 
     screen.blit(ship_display, (20, 20))
     screen.blit(image,(55,50))
+
     screen.blit(health_display, (20, (sub_width + 50)))
     screen.blit(shields_display, (20, (sub_width + 100)))
     screen.blit(attack_display, (20, (sub_width + 150)))   
@@ -165,7 +168,7 @@ while running:
                 ),
                 width=0
             )
-    BSS = pygame.image.load("/home/dzarco@cpc.local/Downloads/Space game Images/Blue Spaceship.png")
+    BSS = pygame.image.load("./Images/Blue Spaceship.png")
     width = BSS.get_rect().width
     height = BSS.get_rect().height
     BSS = pygame.transform.scale(BSS, (block_size,block_size))
@@ -219,46 +222,6 @@ while running:
     clock.tick(60)
 # Done! Time to quit.
 pygame.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
