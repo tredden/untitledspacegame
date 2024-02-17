@@ -162,7 +162,7 @@ while running:
     #UI Text
     if(current_ship is not None):
       font = pygame.font.Font(pygame.font.get_default_font(), 24)
-      ship_display = pygame.font.Font.render(font, current_ship, True, (255, 255, 255))
+      ship_display = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
       health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
       shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
       attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
