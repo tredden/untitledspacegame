@@ -10,6 +10,9 @@ import pygame
 class Unit:
     def __init__(self, pos, type=None):
         self.position = pos
+        self.movement_range = 3
+        self.attack_range = 2
+        self.name = "Current Ship"
 
 class Map:
     def __init__(self):
@@ -38,8 +41,10 @@ entities=[]
 entities.append(Unit((4,7)))    
 entities.append(Unit((2,6)))
 
-highlight=[]
+move_highlight=[]
+attack_highlight=[]
 selection=None
+current_ship = None
 
 sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
 border_width = 5
@@ -73,16 +78,54 @@ while running:
                     previous = selection
                     selection = (mousexx,mouseyy)
                     print(selection)
-                    if(any([selection==x.position for x in entities])):
-                        highlight.clear()
-                        highlight.append(selection)
-                        for nabe in nabes:
-                            xx,yy = (selection[0]+nabe[0],selection[1]+nabe[1])
-                            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count):
-                                highlight.append((xx,yy))
+                    
+                    new_selection = False
+                    for entity in entities:
+                        if(entity.position==selection):
+                            new_selection = True
+                            current_ship = entity
+                            break
+                    if(new_selection):
+                        move_highlight.clear()
+                        move_highlight.append(selection)
+                        attack_highlight.clear()
+                        search=[(selection, current_ship.movement_range)]
+                        search2=[]
+                        done=set()
+                        while search:
+                            currPos, moves = search.pop(0)
+                            if(currPos in done):
+                                continue
+                            if(moves <= 0):
+                                search2.append([currPos,current_ship.attack_range])
+                                continue
+                            done.add(currPos)
+                            for nabe in nabes:
+                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                                    if(all(thing.position!=(xx,yy) for thing in entities)):
+                                        move_highlight.append((xx,yy))
+                                        search.append(((xx,yy),moves-1))
+                        
+                        while search2:
+                            currPos, atk = search2.pop(0)
+                            if(currPos in done or atk <= 0):
+                                continue
+                            done.add(currPos)
+                            for nabe in nabes:
+                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                                    #if(all(thing.position!=(xx,yy) for thing in entities)):
+                                    attack_highlight.append((xx,yy))
+                                    search2.append(((xx,yy),atk-1))
+                        
+                    else:
+                        if(selection in move_highlight):
+                            current_ship.position = selection
+                            
 
 
-    current_ship = "Current Ship"
+    #current_ship = "Current Ship"
 
     health = 100
     max_health = 100
@@ -101,8 +144,8 @@ while running:
     border_width = 5
     #grid_offset = 25
     grid_count = 8
-    block_size = 73
-    block_draw_size = block_size + 2
+    block_size = 75
+    #block_draw_size = block_size + 2
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
@@ -117,18 +160,20 @@ while running:
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
     #UI Text
-    font = pygame.font.Font(pygame.font.get_default_font(), 24)
-    ship_display = pygame.font.Font.render(font, current_ship, True, (255, 255, 255))
-    health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
-    shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
-    attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
+    if(current_ship is not None):
+      font = pygame.font.Font(pygame.font.get_default_font(), 24)
+      ship_display = pygame.font.Font.render(font, current_ship, True, (255, 255, 255))
+      health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
+      shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
+      attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
 
-    screen.blit(ship_display, (20, 20))
-    screen.blit(image,(55,50))
+      screen.blit(ship_display, (20, 20))
+      screen.blit(image,(55,50))
 
-    screen.blit(health_display, (20, (sub_width + 50)))
-    screen.blit(shields_display, (20, (sub_width + 100)))
-    screen.blit(attack_display, (20, (sub_width + 150)))   
+      screen.blit(health_display, (20, (sub_width + 50)))
+      screen.blit(shields_display, (20, (sub_width + 100)))
+      screen.blit(attack_display, (20, (sub_width + 150)))   
+
 
     for y in range(grid_count):
         for x in range(grid_count):
@@ -138,12 +183,34 @@ while running:
                 grid_color,
                 (
                     sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                    block_draw_size, block_draw_size
+                    block_size, block_size
                 ),
                 width=2
             )
 
-   
+    for x,y in move_highlight:
+        grid_color = (100, 100, 255, 100)
+        pygame.draw.rect(
+            screen,
+            grid_color,
+            (
+                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                block_draw_size, block_draw_size
+            ),
+            width=2
+        )
+    
+    for x,y in attack_highlight:
+        grid_color = (255, 100, 100, 100)
+        pygame.draw.rect(
+            screen,
+            grid_color,
+            (
+                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                block_draw_size, block_draw_size
+            ),
+            width=2
+        )
     
   
  
@@ -173,17 +240,7 @@ while running:
     height = BSS.get_rect().height
     BSS = pygame.transform.scale(BSS, (block_size,block_size))
 
-    for x,y in highlight:
-        grid_color = (100, 100, 255, 100)
-        pygame.draw.rect(
-            screen,
-            grid_color,
-            (
-                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                block_draw_size, block_draw_size
-            ),
-            width=2
-        )
+    
 
     #Map Entities
     for entity in entities:    
