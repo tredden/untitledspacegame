@@ -159,22 +159,31 @@ while running:
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
+
+    image = pygame.image.load("./Images/Blue Spaceship.png")
+    image = pygame.transform.scale(image,(200,200))
+
+
+
     # Draw menu borders
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
     #UI Text
     if(current_ship is not None):
-        font = pygame.font.Font(pygame.font.get_default_font(), 24)
-        ship_display = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
-        health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
-        shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
-        attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
+      font = pygame.font.Font(pygame.font.get_default_font(), 24)
+      ship_display = pygame.font.Font.render(font, current_ship, True, (255, 255, 255))
+      health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
+      shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
+      attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
 
-        screen.blit(ship_display, (20, 20))
-        screen.blit(health_display, (20, (sub_width + 50)))
-        screen.blit(shields_display, (20, (sub_width + 100)))
-        screen.blit(attack_display, (20, (sub_width + 150)))   
+      screen.blit(ship_display, (20, 20))
+      screen.blit(image,(55,50))
+
+      screen.blit(health_display, (20, (sub_width + 50)))
+      screen.blit(shields_display, (20, (sub_width + 100)))
+      screen.blit(attack_display, (20, (sub_width + 150)))   
+
 
     for y in range(grid_count):
         for x in range(grid_count):
@@ -280,13 +289,6 @@ while running:
     clock.tick(60)
 # Done! Time to quit.
 pygame.quit()
-
-
-
-
-
-
-
 
 
 
