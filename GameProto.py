@@ -8,11 +8,30 @@ import pygame
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
 class Unit:
-    def __init__(self, pos, type=None):
-        self.position = pos
+    def __init__(self, pos, name, type=None):
+
+      
+        self.name = name
+        self.position = pos  
+        
         self.movement_range = 3
         self.attack_range = 2
-        self.name = "Current Ship"
+        self.health = 100
+        self.maxhealth = 100
+        self.shields = 75
+        self.maxshields = 75
+        self.attack = 10
+
+    def info(self):
+        health_txt = "Health: " + str(self.health) + "/" + str(self.maxhealth)
+        shields_txt = "Shields: " + str(self.shields) + "/" + str(self.maxshields)
+        attack_txt = "Attack: " + str(self.attack)
+
+        return [health_txt, shields_txt, attack_txt]
+
+
+
+
 
 class Map:
     def __init__(self):
@@ -38,13 +57,15 @@ SCREEN_HEIGHT = 640
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 entities=[]
-entities.append(Unit((4,7)))    
-entities.append(Unit((2,6)))
+entities.append(Unit((4,7), "Ship 1"))    
+entities.append(Unit((2,6), "Ship 2"))
 
 move_highlight=[]
 attack_highlight=[]
 selection=None
 current_ship = None
+info = None
+disp_info = []
 
 sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
 border_width = 5
@@ -84,6 +105,7 @@ while running:
                         if(entity.position==selection):
                             new_selection = True
                             current_ship = entity
+                            info = entity.info()
                             break
                     if(new_selection):
                         move_highlight.clear()
@@ -127,15 +149,7 @@ while running:
 
     #current_ship = "Current Ship"
 
-    health = 100
-    max_health = 100
-    shields = 75
-    max_shields = 75
-    attack = 10
-
-    health_txt = "Health: " + str(health) + "/" + str(max_health)
-    shields_txt = "Shields: " + str(shields) + "/" + str(max_shields)
-    attack_txt = "Attack: " + str(attack)
+    
 
 
     screen.fill((0, 0, 0))
@@ -160,19 +174,22 @@ while running:
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
     #UI Text
+    font = pygame.font.Font(pygame.font.get_default_font(), 24)
     if(current_ship is not None):
-      font = pygame.font.Font(pygame.font.get_default_font(), 24)
-      ship_display = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
-      health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
-      shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
-      attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
-
-      screen.blit(ship_display, (20, 20))
-      screen.blit(image,(55,50))
-
-      screen.blit(health_display, (20, (sub_width + 50)))
-      screen.blit(shields_display, (20, (sub_width + 100)))
-      screen.blit(attack_display, (20, (sub_width + 150)))   
+        name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
+        if disp_info != []:
+            disp_info = []
+        for stat in info:
+            disp_info.append(pygame.font.Font.render(font, stat, True, (255, 255, 255)))
+        
+        screen.blit(name, (20, 20))
+        screen.blit(image,(55,50))
+        txtpos = 0
+        i = 0
+        for stat in disp_info:
+            txtpos += 50
+            screen.blit(disp_info[i], (20, (sub_width + txtpos)))
+            i += 1
 
 
     for y in range(grid_count):
