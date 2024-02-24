@@ -1,4 +1,4 @@
-# Simple pygame program
+# Space Game
 
 # Import and initialize the pygame library
 import sysconfig
@@ -7,18 +7,6 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
-class Unit:
-    def __init__(self, pos, type=None):
-        self.position = pos
-        self.movement_range = 3
-        self.attack_range = 2
-        self.name = "Current Ship"
-
-class Map:
-    def __init__(self):
-        pass
-
-
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -29,6 +17,57 @@ from pygame.locals import (
     MOUSEBUTTONDOWN,
     QUIT,
 )
+
+class Unit:
+    def __init__(self, pos, type=None):
+        self.position = pos
+        self.movement_range = 3
+        self.moves_left = self.movement_range
+        self.attack_range = 2
+        self.has_attacked = False
+        self.name = "Current Ship"
+
+class Map:
+    def __init__(self):
+        pass
+
+def calcDist(a,b):
+    return abs(a[0]-b[0])+abs(a[1]-b[1])
+
+def shipSelection(currShip):
+    pos = currShip.position
+    move_highlight.clear()
+    move_highlight.append(pos)
+    attack_highlight.clear()
+    search=[(pos, current_ship.moves_left)]
+    search2=[]
+    done=set()
+    while search:
+        currPos, moves = search.pop(0)
+        if(currPos in done):
+            continue
+        if(moves <= 0):
+            search2.append([currPos,current_ship.attack_range])
+            continue
+        done.add(currPos)
+        for nabe in nabes:
+            xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                if(all(thing.position!=(xx,yy) for thing in entities)):
+                    move_highlight.append((xx,yy))
+                    search.append(((xx,yy),moves-1))
+    
+    while search2:
+        currPos, atk = search2.pop(0)
+        if(currPos in done or atk <= 0):
+            continue
+        done.add(currPos)
+        for nabe in nabes:
+            xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                #if(all(thing.position!=(xx,yy) for thing in entities)):
+                attack_highlight.append((xx,yy))
+                search2.append(((xx,yy),atk-1))
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -86,43 +125,14 @@ while running:
                             current_ship = entity
                             break
                     if(new_selection):
-                        move_highlight.clear()
-                        move_highlight.append(selection)
-                        attack_highlight.clear()
-                        search=[(selection, current_ship.movement_range)]
-                        search2=[]
-                        done=set()
-                        while search:
-                            currPos, moves = search.pop(0)
-                            if(currPos in done):
-                                continue
-                            if(moves <= 0):
-                                search2.append([currPos,current_ship.attack_range])
-                                continue
-                            done.add(currPos)
-                            for nabe in nabes:
-                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
-                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                                    if(all(thing.position!=(xx,yy) for thing in entities)):
-                                        move_highlight.append((xx,yy))
-                                        search.append(((xx,yy),moves-1))
-                        
-                        while search2:
-                            currPos, atk = search2.pop(0)
-                            if(currPos in done or atk <= 0):
-                                continue
-                            done.add(currPos)
-                            for nabe in nabes:
-                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
-                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                                    #if(all(thing.position!=(xx,yy) for thing in entities)):
-                                    attack_highlight.append((xx,yy))
-                                    search2.append(((xx,yy),atk-1))
+                        shipSelection(current_ship)
                         
                     else:
                         if(selection in move_highlight):
+                            dist = calcDist(selection, current_ship.position)
+                            current_ship.moves_left -= dist
                             current_ship.position = selection
-                            
+                            shipSelection(current_ship)
 
 
     #current_ship = "Current Ship"
