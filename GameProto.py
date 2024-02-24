@@ -7,13 +7,22 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
+
+pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
+bswidth = pl_ship.get_rect().width
+bsheight = pl_ship.get_rect().height
+en_ship = pygame.image.load("./Images/Red Spaceship.png")
+eswidth = en_ship.get_rect().width
+esheight = en_ship.get_rect().height
+
 class Unit:
     def __init__(self, pos, name, type=None):
 
-      
+
         self.name = name
         self.position = pos  
-        
+        self.image = pl_ship
+        self.team = "Player"
         self.movement_range = 3
         self.attack_range = 2
         self.health = 100
@@ -28,6 +37,30 @@ class Unit:
         attack_txt = "Attack: " + str(self.attack)
 
         return [health_txt, shields_txt, attack_txt]
+
+class Enemy:
+    def __init__(self, pos, name, type=None):
+
+      
+        self.name = name
+        self.position = pos  
+        self.image = en_ship
+        self.team = "Enemy"
+        self.movement_range = 3
+        self.attack_range = 2
+        self.health = 100
+        self.maxhealth = 100
+        self.shields = 75
+        self.maxshields = 75
+        self.attack = 10
+
+    def info(self):
+        health_txt = "Health: " + str(self.health) + "/" + str(self.maxhealth)
+        shields_txt = "Shields: " + str(self.shields) + "/" + str(self.maxshields)
+        attack_txt = "Attack: " + str(self.attack)
+
+        return [health_txt, shields_txt, attack_txt]
+
 
 
 
@@ -57,8 +90,11 @@ SCREEN_HEIGHT = 640
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 entities=[]
-entities.append(Unit((4,7), "Ship 1"))    
-entities.append(Unit((2,6), "Ship 2"))
+entities.append(Unit((4,7), "Player Ship 1"))    
+entities.append(Unit((2,6), "Player Ship 2"))
+
+entities.append(Enemy((2,3), "Enemy Ship 1"))    
+entities.append(Enemy((4,2), "Enemy Ship 2"))
 
 move_highlight=[]
 attack_highlight=[]
@@ -142,7 +178,7 @@ while running:
                                     search2.append(((xx,yy),atk-1))
                         
                     else:
-                        if(selection in move_highlight):
+                        if(selection in move_highlight and current_ship.team == "Player"):
                             current_ship.position = selection
                             
 
@@ -153,19 +189,11 @@ while running:
 
 
     screen.fill((0, 0, 0))
-
-    sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
-    border_width = 5
-    #grid_offset = 25
-    grid_count = 8
-    block_size = 75
     #block_draw_size = block_size + 2
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 
-    image = pygame.image.load("./Images/Blue Spaceship.png")
-    image = pygame.transform.scale(image,(200,200))
 
 
 
@@ -177,13 +205,14 @@ while running:
     font = pygame.font.Font(pygame.font.get_default_font(), 24)
     if(current_ship is not None):
         name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
+        display_image = pygame.transform.scale(current_ship.image, (200, 200))
         if disp_info != []:
             disp_info = []
         for stat in info:
             disp_info.append(pygame.font.Font.render(font, stat, True, (255, 255, 255)))
         
         screen.blit(name, (20, 20))
-        screen.blit(image,(55,50))
+        screen.blit(display_image ,(55,50))
         txtpos = 0
         i = 0
         for stat in disp_info:
@@ -252,17 +281,13 @@ while running:
                 ),
                 width=0
             )
-    BSS = pygame.image.load("./Images/Blue Spaceship.png")
-    width = BSS.get_rect().width
-    height = BSS.get_rect().height
-    BSS = pygame.transform.scale(BSS, (block_size,block_size))
 
-    
 
     #Map Entities
     for entity in entities:    
         currPos = entity.position
-        screen.blit( BSS, 
+        image = pygame.transform.scale(entity.image, (block_size,block_size))
+        screen.blit( image, 
             (sub_width + currPos[0]*block_size + offset, 
             currPos[1]*block_size + offset)
         )
