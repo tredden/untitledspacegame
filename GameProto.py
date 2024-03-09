@@ -73,9 +73,14 @@ class Unit:
 class Player(Unit):
     def __init__(self, pos, name, type=None):
         super().__init__(pos, name)
-        
         self.image = pl_ship
         self.team = "Player"
+        self.has_moved = False  # Add this line
+    
+    def all_player_ships_moved(entities):
+        return all(entity.has_moved for entity in entities if isinstance(entity, Player))
+
+
 
 #Enemy Class
 class Enemy(Unit):
@@ -203,11 +208,13 @@ while running:
                 else:
                     pass
                     ### Enemy Movement ###
-                    # bot_move = bot.make_move(entities)
-                    # if bot_move:
-                    #         bot.position = bot_move
-                    #         print("The enemy made a move:", bot_move)
-                    #         print("It's the enemy turn to move!")
+            if current_player == "Computer":
+                for entity in entities:
+                    if isinstance(entity, Enemy):  # Check if it is an enemy
+                        new_position = entity.make_move(entities)
+                        if new_position:
+                            entity.position = new_position
+                            print(f"{entity.name} moved to {new_position}")
         
                 current_player = "Computer" if current_player == "Player1" else "Player1"
                 print(f"{current_player}'s turn!")
@@ -235,13 +242,16 @@ while running:
                             dist = calcDist(selection, current_ship.position)
                             current_ship.moves_left -= dist
                             current_ship.position = selection
+                            current_ship.has_moved = True  # Set the flag when the ship moves
                             shipSelection(current_ship)
+
 
     screen.fill((0, 0, 0))
     #block_draw_size = block_size + 2
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
+    all_player_ships_moved = all(ship.has_moved for ship in entities if isinstance(ship, Player))
 
 
     # Draw menu borders
@@ -269,13 +279,16 @@ while running:
             screen.blit(disp_info[i], (20, (sub_width + txtpos)))
             i += 1
   
- 
+    if current_player == "Player1" and all_player_ships_moved:
+        current_player = "Computer"
+        print(f"{current_player}'s turn!")
+        # Reset the has_moved flag for all player ships for the next turn
+        for ship in entities:
+            if isinstance(ship, Player):
+                ship.has_moved = False
 
-    #### END TURN BUTTON ####
-    #pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
-    #font = pygame.font.Font(pygame.font.get_default_font(), 20)
-    #end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255,255,255))
-    #screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
+
+    
 
 
 
