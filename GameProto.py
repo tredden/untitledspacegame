@@ -8,12 +8,64 @@ import random
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
+
+pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
+bswidth = pl_ship.get_rect().width
+bsheight = pl_ship.get_rect().height
+en_ship = pygame.image.load("./Images/Red Spaceship.png")
+eswidth = en_ship.get_rect().width
+esheight = en_ship.get_rect().height
+
 class Unit:
-    def __init__(self, pos, type=None):
-        self.position = pos
+    def __init__(self, pos, name, type=None):
+
+
+        self.name = name
+        self.position = pos  
+        self.image = pl_ship
+        self.team = "Player"
         self.movement_range = 3
         self.attack_range = 2
-        self.name = "Current Ship"
+        self.health = 100
+        self.maxhealth = 100
+        self.shields = 75
+        self.maxshields = 75
+        self.attack = 10
+
+    def info(self):
+        health_txt = "Health: " + str(self.health) + "/" + str(self.maxhealth)
+        shields_txt = "Shields: " + str(self.shields) + "/" + str(self.maxshields)
+        attack_txt = "Attack: " + str(self.attack)
+
+        return [health_txt, shields_txt, attack_txt]
+
+class Enemy:
+    def __init__(self, pos, name, type=None):
+
+      
+        self.name = name
+        self.position = pos  
+        self.image = en_ship
+        self.team = "Enemy"
+        self.movement_range = 3
+        self.attack_range = 2
+        self.health = 100
+        self.maxhealth = 100
+        self.shields = 75
+        self.maxshields = 75
+        self.attack = 10
+
+    def info(self):
+        health_txt = "Health: " + str(self.health) + "/" + str(self.maxhealth)
+        shields_txt = "Shields: " + str(self.shields) + "/" + str(self.maxshields)
+        attack_txt = "Attack: " + str(self.attack)
+
+        return [health_txt, shields_txt, attack_txt]
+
+
+
+
+
 
 class Map:
     def __init__(self):
@@ -24,7 +76,7 @@ class Enemy(Unit):
     def __init__(self, name, color):
         super().__init__(name, color)
         self.image = pygame.image.load("./Images/Red Spaceship.png")
-        self.image = pygame.transform.scale(self.image, (block_size, block_size))
+        #self.image = pygame.transform.scale(self.image, (block_size, block_size))
 
 
 def make_move(self, entities):
@@ -40,7 +92,7 @@ class Player(Unit):
     def __init__(self, name, color):
         super().__init__(name, color)
         self.image = pygame.image.load("./Images/Blue Spaceship.png")
-        self.image = pygame.transform.scale(self.image, (block_size, block_size))
+        #self.image = pygame.transform.scale(self.image, (block_size, block_size))
 
 def draw(self, screen, sub_width, offset):
     for entity in entities:
@@ -55,6 +107,7 @@ from pygame.locals import (
     K_LEFT,
     K_RIGHT,
     K_ESCAPE,
+    K_RETURN,
     KEYDOWN,
     MOUSEBUTTONDOWN,
     QUIT,
@@ -68,13 +121,18 @@ SCREEN_HEIGHT = 640
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 entities=[]
-entities.append(Unit((4,7)))    
-entities.append(Unit((2,6)))
+entities.append(Unit((4,7), "Player Ship 1"))    
+entities.append(Unit((2,6), "Player Ship 2"))
+
+entities.append(Enemy((2,3), "Enemy Ship 1"))    
+entities.append(Enemy((4,2), "Enemy Ship 2"))
 
 move_highlight=[]
 attack_highlight=[]
 selection=None
 current_ship = None
+info = None
+disp_info = []
 
 sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
 border_width = 5
@@ -88,6 +146,7 @@ offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 nabes = [(0,1),(1,0),(0,-1),(-1,0)]
 # Run until the user asks to quit
 running = True
+current_player = "Player1"
 while running:
 
     mousex, mousey = pygame.mouse.get_pos()
@@ -100,6 +159,20 @@ while running:
             # If the Esc key is pressed, then exit the main loop
             if event.key == K_ESCAPE:
                 running = False
+            if event.key == K_RETURN:
+                if current_player == "Player1":
+                    print("Your turn to move!")
+                else:
+                    pass
+                    ### Enemy Movement ###
+                    # bot_move = bot.make_move(entities)
+                    # if bot_move:
+                    #         bot.position = bot_move
+                    #         print("The enemy made a move:", bot_move)
+                    #         print("It's the enemy turn to move!")
+        
+                current_player = "Computer" if current_player == "Player1" else "Player1"
+                print(f"{current_player}'s turn!")
         if event.type == QUIT:
             running = False
         if event.type == MOUSEBUTTONDOWN:
@@ -114,6 +187,7 @@ while running:
                         if(entity.position==selection):
                             new_selection = True
                             current_ship = entity
+                            info = entity.info()
                             break
                     if(new_selection):
                         move_highlight.clear()
@@ -150,38 +224,14 @@ while running:
                                     search2.append(((xx,yy),atk-1))
                         
                     else:
-                        if(selection in move_highlight):
-                            current_ship.position = selection
-                            
-
-
-    #current_ship = "Current Ship"
-
-    health = 100
-    max_health = 100
-    shields = 75
-    max_shields = 75
-    attack = 10
-
-    health_txt = "Health: " + str(health) + "/" + str(max_health)
-    shields_txt = "Shields: " + str(shields) + "/" + str(max_shields)
-    attack_txt = "Attack: " + str(attack)
+                        if(selection in move_highlight and current_ship.team == "Player"):
+                            current_ship.position = selection    
 
 
     screen.fill((0, 0, 0))
-
-    sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
-    border_width = 5
-    #grid_offset = 25
-    grid_count = 8
-    block_size = 75
     #block_draw_size = block_size + 2
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
-
-
-    image = pygame.image.load("./Images/Blue Spaceship.png")
-    image = pygame.transform.scale(image,(200,200))
 
 
 
@@ -190,46 +240,26 @@ while running:
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
 
-
-
-running = True
-while running:
     
-    for event in pygame.event.get():
-        if event.type == K_ESCAPE:
-            running = False
-    if event.type == QUIT:
-        running = False
-    if event.type == MOUSEBUTTONDOWN:
-         if pygame.mouse.get_pressed()[0]:
-            if current_player == player1:
-                print("Your turn to move!")
-
-else:
-    bot_move = bot.make_move(entities)
-    if bot_move:
-            bot.position = bot_move
-            print("The enemy made a move:", bot_move)
-            print("It's the enemy turn to move!")
-    
-    current_player = bot if current_player == player1 else player1
-    print(f"{current_player.name}'s turn!")
-
 
     #UI Text
+    font = pygame.font.Font(pygame.font.get_default_font(), 24)
     if(current_ship is not None):
-      font = pygame.font.Font(pygame.font.get_default_font(), 24)
-      ship_display = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
-      health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
-      shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
-      attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
-
-      screen.blit(ship_display, (20, 20))
-      player1 = Player("Player 1", (100, 100, 155), "./Image/Blue Spaceship.png")
-      player1.draw(screen, sub_width, offset)
-      screen.blit(health_display, (20, (sub_width + 50)))
-      screen.blit(shields_display, (20, (sub_width + 100)))
-      screen.blit(attack_display, (20, (sub_width + 150)))   
+        name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
+        display_image = pygame.transform.scale(current_ship.image, (200, 200))
+        if disp_info != []:
+            disp_info = []
+        for stat in info:
+            disp_info.append(pygame.font.Font.render(font, stat, True, (255, 255, 255)))
+        
+        screen.blit(name, (20, 20))
+        screen.blit(display_image ,(55,50))
+        txtpos = 0
+        i = 0
+        for stat in disp_info:
+            txtpos += 50
+            screen.blit(disp_info[i], (20, (sub_width + txtpos)))
+            i += 1
 
 
     for y in range(grid_count):
@@ -271,77 +301,72 @@ else:
     
  
 
+    #### END TURN BUTTON ####
+    #pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
+    #font = pygame.font.Font(pygame.font.get_default_font(), 20)
+    #end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255,255,255))
+    #screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
 
-pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
-font = pygame.font.Font(pygame.font.get_default_font(), 20)
-end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255,255,255))
-screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
 
 
-
+    
+    # Draw menu borders
+    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
         
+        
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+            pygame.draw.rect(
+                    screen,
+                    (200, 200, 0),
+                    (
+                        round(mousexx)*block_size + (sub_width + offset), 
+                        round(mouseyy)*block_size + offset,
+                        block_draw_size, block_draw_size
+                    ),
+                    width=0
+                )
 
-    # Draw menu borders
-pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
-    
-    
-mousex, mousey = pygame.mouse.get_pos()
-mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-mouseyy = (mousey - offset - block_size/2)/block_size
-if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
-        pygame.draw.rect(
-                screen,
-                (200, 200, 0),
-                (
-                    round(mousexx)*block_size + (sub_width + offset), 
-                    round(mouseyy)*block_size + offset,
-                    block_draw_size, block_draw_size
-                ),
-                width=0
+
+    ### Map Entities ###
+    for entity in entities:    
+            currPos = entity.position
+            image = pygame.transform.scale(entity.image, (block_size,block_size))
+            screen.blit( image, 
+                (sub_width + currPos[0]*block_size + offset, 
+                currPos[1]*block_size + offset)
             )
-BSS = pygame.image.load("./Images/Blue Spaceship.png")
-width = BSS.get_rect().width
-height = BSS.get_rect().height
-BSS = pygame.transform.scale(BSS, (block_size,block_size))
+        
+        
+        # Draw menu borders
+    pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
-    
 
-    #Map Entities
-for entity in entities:    
-        currPos = entity.position
-        screen.blit( BSS, 
-            (sub_width + currPos[0]*block_size + offset, 
-            currPos[1]*block_size + offset)
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+        pygame.draw.rect(
+            screen,
+            (200, 200, 0),
+            (
+                round(mousexx)*block_size + (sub_width + offset), 
+                round(mouseyy)*block_size + offset,
+                block_draw_size, block_draw_size
+            ),
+            width=0
         )
-    
-    
-    # Draw menu borders
-pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
-
-
-mousex, mousey = pygame.mouse.get_pos()
-mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-mouseyy = (mousey - offset - block_size/2)/block_size
-if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
-        pygame.draw.rect(
-                screen,
-                (200, 200, 0),
-                (
-                    round(mousexx)*block_size + (sub_width + offset), 
-                    round(mouseyy)*block_size + offset,
-                    block_draw_size, block_draw_size
-                ),
-                width=0
-            )
 
     # Flip the display
+    pygame.display.flip()
 
-pygame.display.flip()
+    clock.tick(60)
 
-clock.tick(60)
 # Done! Time to quit.
 pygame.quit()
 
