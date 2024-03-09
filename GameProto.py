@@ -4,6 +4,7 @@
 import sysconfig
 print(sysconfig.get_paths()["purelib"])
 import pygame
+import random
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -19,9 +20,12 @@ class Map:
         pass
 
 
-class Bot():
+class Enemy(Unit):
     def __init__(self, name, color):
-        super().__init__(name, color, "./Images/Red Spaceship.png")
+        super().__init__(name, color)
+        self.image = pygame.image.load("./Images/Red Spaceship.png")
+        self.image = pygame.transform.scale(self.image, (block_size, block_size))
+
 
 def make_move(self, entities):
     valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
@@ -32,10 +36,9 @@ def make_move(self, entities):
     else:
         return None
 
-class Player:
-    def __init__(self, name, color, "./Images/Blue Spaceship.png"):
-        self.name = name
-        self.color = color
+class Player(Unit):
+    def __init__(self, name, color):
+        super().__init__(name, color)
         self.image = pygame.image.load("./Images/Blue Spaceship.png")
         self.image = pygame.transform.scale(self.image, (block_size, block_size))
 
