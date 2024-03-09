@@ -1,4 +1,4 @@
-# Simple pygame program
+# Space Game
 
 # Import and initialize the pygame library
 import sysconfig
@@ -7,45 +7,6 @@ import pygame
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
-class Unit:
-    def __init__(self, pos, type=None):
-        self.position = pos
-        self.movement_range = 3
-        self.attack_range = 2
-        self.name = "Current Ship"
-
-class Map:
-    def __init__(self):
-        pass
-
-
-class Bot():
-    def __init__(self, name, color):
-        super().__init__(name, color, "./Images/Red Spaceship.png")
-
-def make_move(self, entities):
-    valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-    valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
-    
-    if valid_moves:
-        return random.choice(valid_moves)
-    else:
-        return None
-
-class Player:
-    def __init__(self, name, color, "./Images/Blue Spaceship.png"):
-        self.name = name
-        self.color = color
-        self.image = pygame.image.load("./Images/Blue Spaceship.png")
-        self.image = pygame.transform.scale(self.image, (block_size, block_size))
-
-def draw(self, screen, sub_width, offset):
-    for entity in entities:
-        currPos = entity.position
-        screen.blit(self.image, (sub_width + currPos[0]*block_size + offset, currPos[1]*block_size + offset))
-
-
-
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -56,6 +17,57 @@ from pygame.locals import (
     MOUSEBUTTONDOWN,
     QUIT,
 )
+
+class Unit:
+    def __init__(self, pos, type=None):
+        self.position = pos
+        self.movement_range = 3
+        self.moves_left = self.movement_range
+        self.attack_range = 2
+        self.has_attacked = False
+        self.name = "Current Ship"
+
+class Map:
+    def __init__(self):
+        pass
+
+def calcDist(a,b):
+    return abs(a[0]-b[0])+abs(a[1]-b[1])
+
+def shipSelection(currShip):
+    pos = currShip.position
+    move_highlight.clear()
+    move_highlight.append(pos)
+    attack_highlight.clear()
+    search=[(pos, current_ship.moves_left)]
+    search2=[]
+    done=set()
+    while search:
+        currPos, moves = search.pop(0)
+        if(currPos in done):
+            continue
+        if(moves <= 0):
+            search2.append([currPos,current_ship.attack_range])
+            continue
+        done.add(currPos)
+        for nabe in nabes:
+            xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                if(all(thing.position!=(xx,yy) for thing in entities)):
+                    move_highlight.append((xx,yy))
+                    search.append(((xx,yy),moves-1))
+    
+    while search2:
+        currPos, atk = search2.pop(0)
+        if(currPos in done or atk <= 0):
+            continue
+        done.add(currPos)
+        for nabe in nabes:
+            xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
+            if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
+                #if(all(thing.position!=(xx,yy) for thing in entities)):
+                attack_highlight.append((xx,yy))
+                search2.append(((xx,yy),atk-1))
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -113,43 +125,14 @@ while running:
                             current_ship = entity
                             break
                     if(new_selection):
-                        move_highlight.clear()
-                        move_highlight.append(selection)
-                        attack_highlight.clear()
-                        search=[(selection, current_ship.movement_range)]
-                        search2=[]
-                        done=set()
-                        while search:
-                            currPos, moves = search.pop(0)
-                            if(currPos in done):
-                                continue
-                            if(moves <= 0):
-                                search2.append([currPos,current_ship.attack_range])
-                                continue
-                            done.add(currPos)
-                            for nabe in nabes:
-                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
-                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                                    if(all(thing.position!=(xx,yy) for thing in entities)):
-                                        move_highlight.append((xx,yy))
-                                        search.append(((xx,yy),moves-1))
-                        
-                        while search2:
-                            currPos, atk = search2.pop(0)
-                            if(currPos in done or atk <= 0):
-                                continue
-                            done.add(currPos)
-                            for nabe in nabes:
-                                xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
-                                if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                                    #if(all(thing.position!=(xx,yy) for thing in entities)):
-                                    attack_highlight.append((xx,yy))
-                                    search2.append(((xx,yy),atk-1))
+                        shipSelection(current_ship)
                         
                     else:
                         if(selection in move_highlight):
+                            dist = calcDist(selection, current_ship.position)
+                            current_ship.moves_left -= dist
                             current_ship.position = selection
-                            
+                            shipSelection(current_ship)
 
 
     #current_ship = "Current Ship"
@@ -186,44 +169,17 @@ while running:
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
-
-
-
-running = True
-while running:
-    
-    for event in pygame.event.get():
-        if event.type == K_ESCAPE:
-            running = False
-    if event.type == QUIT:
-        running = False
-    if event.type == MOUSEBUTTONDOWN:
-         if pygame.mouse.get_pressed()[0]:
-            if current_player == player1:
-                print("Your turn to move!")
-
-else:
-    bot_move = bot.make_move(entities)
-    if bot_move:
-            bot.position = bot_move
-            print("The enemy made a move:", bot_move)
-            print("It's the enemy turn to move!")
-    
-    current_player = bot if current_player == player1 else player1
-    print(f"{current_player.name}'s turn!")
-
-
     #UI Text
     if(current_ship is not None):
       font = pygame.font.Font(pygame.font.get_default_font(), 24)
-      ship_display = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
+      ship_display = pygame.font.Font.render(font, current_ship, True, (255, 255, 255))
       health_display =  pygame.font.Font.render(font, health_txt , True, (255, 255, 255))
       shields_display =  pygame.font.Font.render(font, shields_txt, True, (255, 255, 255))
       attack_display =  pygame.font.Font.render(font, attack_txt, True, (255, 255, 255))
 
       screen.blit(ship_display, (20, 20))
-      player1 = Player("Player 1", (100, 100, 155), "./Image/Blue Spaceship.png")
-      player1.draw(screen, sub_width, offset)
+      screen.blit(image,(55,50))
+
       screen.blit(health_display, (20, (sub_width + 50)))
       screen.blit(shields_display, (20, (sub_width + 100)))
       screen.blit(attack_display, (20, (sub_width + 150)))   
@@ -266,27 +222,19 @@ else:
             width=2
         )
     
+  
  
-
-
-pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
-font = pygame.font.Font(pygame.font.get_default_font(), 20)
-end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255,255,255))
-screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
-
-
-
-        
+    
 
     # Draw menu borders
-pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
     
     
-mousex, mousey = pygame.mouse.get_pos()
-mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-mouseyy = (mousey - offset - block_size/2)/block_size
-if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
         pygame.draw.rect(
                 screen,
                 (200, 200, 0),
@@ -297,15 +245,15 @@ if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < 
                 ),
                 width=0
             )
-BSS = pygame.image.load("./Images/Blue Spaceship.png")
-width = BSS.get_rect().width
-height = BSS.get_rect().height
-BSS = pygame.transform.scale(BSS, (block_size,block_size))
+    BSS = pygame.image.load("./Images/Blue Spaceship.png")
+    width = BSS.get_rect().width
+    height = BSS.get_rect().height
+    BSS = pygame.transform.scale(BSS, (block_size,block_size))
 
     
 
     #Map Entities
-for entity in entities:    
+    for entity in entities:    
         currPos = entity.position
         screen.blit( BSS, 
             (sub_width + currPos[0]*block_size + offset, 
@@ -314,15 +262,15 @@ for entity in entities:
     
     
     # Draw menu borders
-pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
-pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.line(screen, (100, 100, 255), (0, (sub_width * (4/5))), (sub_width, (sub_width * (4/5))), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
 
-mousex, mousey = pygame.mouse.get_pos()
-mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-mouseyy = (mousey - offset - block_size/2)/block_size
-if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
         pygame.draw.rect(
                 screen,
                 (200, 200, 0),
@@ -336,30 +284,11 @@ if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < 
 
     # Flip the display
 
-pygame.display.flip()
+    pygame.display.flip()
 
-clock.tick(60)
+    clock.tick(60)
 # Done! Time to quit.
 pygame.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
