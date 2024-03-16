@@ -157,7 +157,7 @@ SCREEN_HEIGHT = 640
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 entities=[]
-entities.append(Player((4,7), "Player Ship 1"))    
+entities.append(Player((5,3), "Player Ship 1"))    
 entities.append(Player((2,6), "Player Ship 2"))
 
 entities.append(Enemy((2,3), "Enemy Ship 1"))    
@@ -182,7 +182,19 @@ offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 # Run until the user asks to quit
 running = True
 
+def enemy_move(entity, entities, grid_count):
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    dx, dy = random.choice(directions)
+    new_position = (entity.position[0] + dx, entity.position[1] + dy)
+    if 0 <= new_position[0] < grid_count and 0 <= new_position[1] < grid_count and not any(e.position == new_position for e in entities):
+        entity.position = new_position
 
+def enemy_attack(entity, entities):
+    for target in entities:
+        if target.team == "Player" and max(abs(entity.position[0] - target.position[0]), abs(entity.position[1] - target.position[1])) <= entity.attack_range:
+            print(f"{entity.name} attacks {target.name}!")
+            target.health -= entity.attack
+            break  # Each enemy attacks once per turn
 
 ### GAME START ###
 while running:
@@ -198,19 +210,20 @@ while running:
             if event.key == K_ESCAPE:
                 running = False
             if event.key == K_RETURN:
+                current_player = "Player1" if current_player == "Computer" else "Computer"
+                print(f"{current_player}'s turn!")
                 if current_player == "Player1":
                     print("Your turn to move!")
                 else:
-                    pass
-                    ### Enemy Movement ###
-                    # bot_move = bot.make_move(entities)
-                    # if bot_move:
-                    #         bot.position = bot_move
-                    #         print("The enemy made a move:", bot_move)
-                    #         print("It's the enemy turn to move!")
+                    # AI Turn logic:
+                        for entity in entities:
+                            if entity.team == "Enemy":
+                                enemy_move(entity, entities, grid_count)
+                                enemy_attack(entity, entities)
+                        player_turn = True  # Hand turn back to player after all enemies have acted
+
         
-                current_player = "Computer" if current_player == "Player1" else "Player1"
-                print(f"{current_player}'s turn!")
+                
         if event.type == QUIT:
             running = False
         if event.type == MOUSEBUTTONDOWN:
@@ -240,14 +253,22 @@ while running:
     screen.fill((0, 0, 0))
     #block_draw_size = block_size + 2
 
-    offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
-
+    
 
 
     # Draw menu borders
     pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
     pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
+    end_turn_button_rect = pygame.Rect(20, SCREEN_HEIGHT -50, 100, 30)
+
+    # Draw End button 
+    pygame.draw.rect(screen, (50, 50,50),end_turn_button_rect)
+    font = pygame.font.Font(pygame.font.get_default_font(),20)
+    end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255, 255, 255))
+    screen.blit(end_turn_text, (end_turn_button_rect.x+10, end_turn_button_rect.y+5))
+
+    offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 
     #UI Text
@@ -269,16 +290,6 @@ while running:
             screen.blit(disp_info[i], (20, (sub_width + txtpos)))
             i += 1
   
- 
-
-    #### END TURN BUTTON ####
-    #pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
-    #font = pygame.font.Font(pygame.font.get_default_font(), 20)
-    #end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255,255,255))
-    #screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
-
-
-
     # Draw Grid
     for y in range(grid_count):
         for x in range(grid_count):
@@ -353,6 +364,49 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
