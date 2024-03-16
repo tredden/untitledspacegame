@@ -221,9 +221,6 @@ while running:
                                 enemy_move(entity, entities, grid_count)
                                 enemy_attack(entity, entities)
                         player_turn = True  # Hand turn back to player after all enemies have acted
-
-        
-                
         if event.type == QUIT:
             running = False
         if event.type == MOUSEBUTTONDOWN:
@@ -364,6 +361,10 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
+
+
+
+
 
 
 
