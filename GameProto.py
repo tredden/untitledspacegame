@@ -105,7 +105,7 @@ class Enemy(Unit):
 
       if valid_moves:
           new_pos = random.choice(valid_moves)
-          self.position = new_pos  # Updates the position with a valid move choice
+          self.position = new_pos
       else:
           return None
 
