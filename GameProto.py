@@ -100,11 +100,14 @@ class Enemy(Unit):
 
     # Movement control for enemies
     def make_move(self, entities, grid_count):
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        dx, dy = random.choice(directions)
-        new_position = (self.position[0] + dx, self.position[1] + dy)
-        if 0 <= new_position[0] < grid_count and 0 <= new_position[1] < grid_count and not any(e.position == new_position for e in entities):
-            self.position = new_position
+      valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+      valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
+
+      if valid_moves:
+          new_pos = random.choice(valid_moves)
+          self.position = new_pos  # Updates the position with a valid move choice
+      else:
+          return None
 
 # Function to check win condition 
 def check_win_condition(entities):
