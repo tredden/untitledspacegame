@@ -82,7 +82,6 @@ class Unit:
 class Player(Unit):
     def __init__(self, pos, name, type=None):
         super().__init__(pos, name, type=type)
-        # Choose image based on type
         if type == "Mothership":
             self.image = pl_mothership
         else:
@@ -93,7 +92,6 @@ class Player(Unit):
 class Enemy(Unit):
     def __init__(self, pos, name, type=None):
         super().__init__(pos, name, type=type)
-        # Choose image based on type
         if type == "Mothership":
             self.image = en_mothership
         else:
@@ -163,7 +161,6 @@ def shipSelection(currShip):
         for nabe in nabes:
             xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
             if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                #if(all(thing.position!=(xx,yy) for thing in entities)):
                 attack_highlight.append((xx,yy))
                 search2.append(((xx,yy),atk-1))
 
@@ -202,14 +199,12 @@ block_size = 75
 #block_draw_size = block_size + 2
 offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
-# Run until the user asks to quit
 running = True
 
 def enemy_move_and_attack(entities, grid_count):
     for entity in entities:
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
-            # Mimicking an attack mechanism for demo purposes
             for target in entities:
                 if target.team == "Player" and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
