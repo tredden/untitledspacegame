@@ -104,18 +104,29 @@ class Enemy(Unit):
 
     # Movement control for enemies
     def make_move(self, entities, grid_count):
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        dx, dy = random.choice(directions)
-        new_position = (self.position[0] + dx, self.position[1] + dy)
-        if 0 <= new_position[0] < grid_count and 0 <= new_position[1] < grid_count and not any(e.position == new_position for e in entities):
-            self.position = new_position
+      valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+      valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
+
+      if valid_moves:
+          new_pos = random.choice(valid_moves)
+          self.position = new_pos
+      else:
+          return None
 
 # Function to check win condition 
 def check_win_condition(entities):
     # Check if there are any enemies left
     enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
     if not enemies_remaining:
-        print("Congratulations! You have won the game by destroying all enemies.")
+        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+
+
+# Function to check lose condition
+def check_lose_condition(entities):
+    # Check if there are any player ships left
+    player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
+    if not player_ships_remaining:
+        print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
 
 # Maybe add a map class
 class Map:
@@ -195,7 +206,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 entities=[]
 entities.append(Player((5,3), "Player Ship 1"))    
 entities.append(Player((2,6), "Player Ship 2"))
-
+# Enemy's
 entities.append(Enemy((2,3), "Enemy Ship 1"))    
 entities.append(Enemy((4,2), "Enemy Ship 2"))
 
@@ -215,10 +226,8 @@ current_player = "Player1"
 
 sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
 border_width = 5
-#grid_offset = 25
 grid_count = 8
 block_size = 75
-#block_draw_size = block_size + 2
 offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 running = True
@@ -228,9 +237,12 @@ def enemy_move_and_attack(entities, grid_count):
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
             for target in entities:
-                if target.team == "Player" and calcDist(entity.position, target.position) <= entity.attack_range:
+                if target.team == "Player" and target.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
                     attack(entity, target)
+                    if target.health <= 0:
+                        print(f"{target.name} has been destroyed!")
+                    
 
 while running:
 
@@ -247,12 +259,13 @@ while running:
             if event.key == K_RETURN:
                 enemy_move_and_attack(entities, grid_count)
                 check_win_condition(entities)  # checking win condition after enemy action
-                print("Enemy's turn!")
-                # Resetting move count for player ships for the next turn
+                check_lose_condition(entities)  # checking lose condition after enemy action
+                # Restting move count for players ships
                 for entity in entities:
                     if entity.team == "Player":
                         entity.moves_left = entity.movement_range
                         check_win_condition(entities)  # checking win condition after player has reset
+                        check_lose_condition(entities)  # checking lose condition after player has reset
                 print("Your turn to move!")
                 for entity in entities:
                     entity.attacksleft = 1
@@ -283,7 +296,20 @@ while running:
                             dist = calcDist(selection, current_ship.position)
                             current_ship.moves_left -= dist
                             current_ship.position = selection
-                    check_win_condition(entities)  # checking win condition after player action
+                            shipSelection(current_ship)
+                            check_win_condition(entities)  # checking win condition after player action
+                            check_lose_condition(entities) # checking lose condition after player action
+                # The end turn button have been pressed
+                elif end_turn_button_rect.collidepoint(mousex, mousey):
+                    enemy_move_and_attack(entities, grid_count)
+                    check_win_condition(entities)  # Checking win condition after enemy action
+                    check_lose_condition(entities)  # Checking lose condition after enemy action
+                    print("Enemy's turn!")
+                    for entity in entities:
+                        if entity.team == "Player":
+                            entity.moves_left = entity.movement_range
+                    print("Your turn to move!")
+
     screen.fill((0, 0, 0))
 
     # Draw menu borders
