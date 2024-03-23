@@ -114,7 +114,7 @@ def check_win_condition(entities):
     # Check if there are any enemies left
     enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
     if not enemies_remaining:
-        print("Congratulations! You have won the game by destroying all enemies.")
+        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
 
 # Maybe add a map class
 class Map:
@@ -179,7 +179,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 entities=[]
 entities.append(Player((5,3), "Player Ship 1"))    
 entities.append(Player((2,6), "Player Ship 2"))
-
+Enemy's
 entities.append(Enemy((2,3), "Enemy Ship 1"))    
 entities.append(Enemy((4,2), "Enemy Ship 2"))
 
@@ -196,10 +196,8 @@ current_player = "Player1"
 
 sub_width = SCREEN_WIDTH-SCREEN_HEIGHT
 border_width = 5
-#grid_offset = 25
 grid_count = 8
 block_size = 75
-#block_draw_size = block_size + 2
 offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 running = True
@@ -228,8 +226,7 @@ while running:
             if event.key == K_RETURN:
                 enemy_move_and_attack(entities, grid_count)
                 check_win_condition(entities)  # checking win condition after enemy action
-                print("Enemy's turn!")
-                # Resetting move count for player ships for the next turn
+                # Restting move count for players ships
                 for entity in entities:
                     if entity.team == "Player":
                         entity.moves_left = entity.movement_range
@@ -262,6 +259,15 @@ while running:
                             current_ship.position = selection
                             shipSelection(current_ship)
                             check_win_condition(entities)  # checking win condition after player action
+                # The end have been button press
+                elif end_turn_button_rect.collidepoint(mousex, mousey):
+                    enemy_move_and_attack(entities, grid_count)
+                    check_win_condition(entities)  # Checking win condition after enemy action
+                    print("Enemy's turn!")
+                    for entity in entities:
+                        if entity.team == "Player":
+                            entity.moves_left = entity.movement_range
+                    print("Your turn to move!")
 
     screen.fill((0, 0, 0))
 
@@ -372,3 +378,5 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
+
+
