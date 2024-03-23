@@ -116,6 +116,14 @@ def check_win_condition(entities):
     if not enemies_remaining:
         print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
 
+
+# Function to check lose condition
+def check_lose_condition(entities):
+    # Check if there are any player ships left
+    player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
+    if not player_ships_remaining:
+        print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
+
 # Maybe add a map class
 class Map:
     def __init__(self):
@@ -207,9 +215,11 @@ def enemy_move_and_attack(entities, grid_count):
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
             for target in entities:
-                if target.team == "Player" and calcDist(entity.position, target.position) <= entity.attack_range:
+                if target.team == "Player" and target.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
                     target.health -= entity.attack
+                    if target.health <= 0:
+                        print(f"{target.name} has been destroyed!")
 
 while running:
 
@@ -226,11 +236,13 @@ while running:
             if event.key == K_RETURN:
                 enemy_move_and_attack(entities, grid_count)
                 check_win_condition(entities)  # checking win condition after enemy action
+                check_lose_condition(entities)  # checking lose condition after enemy action
                 # Restting move count for players ships
                 for entity in entities:
                     if entity.team == "Player":
                         entity.moves_left = entity.movement_range
                         check_win_condition(entities)  # checking win condition after player has reset
+                        check_lose_condition(entities)  # checking lose condition after player has reset
                 print("Your turn to move!")
 
         if event.type == QUIT:
@@ -259,10 +271,12 @@ while running:
                             current_ship.position = selection
                             shipSelection(current_ship)
                             check_win_condition(entities)  # checking win condition after player action
-                # The end have been button press
+                            check_lose_condition(entities) # checking lose condition after player action
+                # The end turn button have been pressed
                 elif end_turn_button_rect.collidepoint(mousex, mousey):
                     enemy_move_and_attack(entities, grid_count)
                     check_win_condition(entities)  # Checking win condition after enemy action
+                    check_lose_condition(entities)  # Checking lose condition after enemy action
                     print("Enemy's turn!")
                     for entity in entities:
                         if entity.team == "Player":
@@ -378,5 +392,3 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
-
-
