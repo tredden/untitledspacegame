@@ -179,7 +179,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 entities=[]
 entities.append(Player((5,3), "Player Ship 1"))    
 entities.append(Player((2,6), "Player Ship 2"))
-Enemy's
+# Enemy's
 entities.append(Enemy((2,3), "Enemy Ship 1"))    
 entities.append(Enemy((4,2), "Enemy Ship 2"))
 
