@@ -37,6 +37,8 @@ en_mothership = pygame.image.load("./Images/Red Mothership.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
+targeting = False
+
 # Base Class
 class Unit:
     def __init__(self, pos, name, type=None):
@@ -51,24 +53,26 @@ class Unit:
             self.attack_range = 2
             self.maxhealth = 100
             self.maxshields = 75
-            self.attack = 10
+            self.attack = 50
+            self.attacksleft = 1
         elif(type=="Mothership"):
             self.movement_range = 1
             self.attack_range = 3
             self.maxhealth = 500
             self.maxshields = 750
-            self.attack = 10
+            self.attack = 100
+            self.attacksleft = 1
         else:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
             self.maxshields = 75
-            self.attack = 10
+            self.attack = 100
+            self.attacksleft = 1
 
         self.health = self.maxhealth
         self.shields = self.maxshields
         self.moves_left = self.movement_range
-        self.has_attacked = False
 
 
     def info(self):
@@ -138,6 +142,8 @@ def shipSelection(currShip):
     search=[(pos, current_ship.moves_left)]
     search2=[]
     done=set()
+    if currShip.team == "Player":
+        targeting = True
     while search:
         currPos, moves = search.pop(0)
         if(currPos in done):
@@ -163,6 +169,19 @@ def shipSelection(currShip):
             if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
                 attack_highlight.append((xx,yy))
                 search2.append(((xx,yy),atk-1))
+                
+                
+def attack(ship, unit):
+    atk = ship.attack
+    if unit.shields < atk:
+        bonus_atk = atk - unit.shields
+        unit.shields = 0 
+        unit.health -= bonus_atk
+    else:
+        unit.shields -= atk
+    if unit.health < 0:
+        unit.health = 0
+   
 
 
 ### GAME INITIALIZATION ###
@@ -185,8 +204,11 @@ entities.append(Enemy((2, 0), "Red Mothership", type="Mothership"))
 
 move_highlight=[]
 attack_highlight=[]
+selection_highlight=[]
 selection=None
+previous=None
 current_ship = None
+tagged_ship = None
 info = None
 disp_info = []
 current_player = "Player1"
@@ -208,7 +230,7 @@ def enemy_move_and_attack(entities, grid_count):
             for target in entities:
                 if target.team == "Player" and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
-                    target.health -= entity.attack
+                    attack(entity, target)
 
 while running:
 
@@ -232,34 +254,36 @@ while running:
                         entity.moves_left = entity.movement_range
                         check_win_condition(entities)  # checking win condition after player has reset
                 print("Your turn to move!")
+                for entity in entities:
+                    entity.attacksleft = 1
 
         if event.type == QUIT:
             running = False
         if event.type == MOUSEBUTTONDOWN:
             if pygame.mouse.get_pressed()[0]:
                 if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
-                    previous = selection
+                    previous = current_ship
                     selection = (mousexx, mouseyy)
                     print(selection)
 
-                    new_selection = False
                     for entity in entities:
                         if entity.position == selection:
                             new_selection = True
                             current_ship = entity
                             info = entity.info()
                             break
+                    if previous != None and current_ship.team != None:
+                        if previous.team == "Player" and current_ship.team == "Enemy":
+                            if previous.attacksleft > 0:
+                                attack(previous, current_ship)
+                                previous.attacksleft -= 1
                     if new_selection:
                         shipSelection(current_ship)
-
-                    else:
                         if selection in move_highlight and current_ship.team == "Player":
                             dist = calcDist(selection, current_ship.position)
                             current_ship.moves_left -= dist
                             current_ship.position = selection
-                            shipSelection(current_ship)
-                            check_win_condition(entities)  # checking win condition after player action
-
+                    check_win_condition(entities)  # checking win condition after player action
     screen.fill((0, 0, 0))
 
     # Draw menu borders
@@ -294,6 +318,7 @@ while running:
             txtpos += 50
             screen.blit(disp_info[i], (20, (sub_width + txtpos)))
             i += 1
+        # if current_ship.team == Enemy and current_ship.position in any(entity.attack_ for entity in entities if entity.team == "Enemy")
 
     # Draw Grid
     for y in range(grid_count):
@@ -333,7 +358,21 @@ while running:
                 block_size, block_size
             ),
             width=2
-        )    
+        )
+
+    #selection highlight
+    for x, y in selection_highlight:
+        grid_color = (255, 255, 100, 100)
+        pygame.draw.rect(
+            screen,
+            grid_color,
+            (
+                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                block_size, block_size
+            ),
+            width=2
+        )
+
 
     # show mouse-selected grid square
     mousex, mousey = pygame.mouse.get_pos()
