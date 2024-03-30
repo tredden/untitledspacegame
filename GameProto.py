@@ -6,6 +6,16 @@ print(sysconfig.get_paths()["purelib"])
 import pygame
 import random
 
+# Initialize Pygame Mixer
+pygame.mixer.init()
+
+# Load sound effects
+death_sound = pygame.mixer.Sound("Sound Effects/psz_dead.mp3")
+win_sound = pygame.mixer.Sound("Sound Effects/win_loud.mp3")
+lose_sound = pygame.mixer.Sound("Sound Effects/gameover_loud.mp3")
+damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
+attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
+
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
 
@@ -110,6 +120,7 @@ def check_win_condition(entities):
     # Check if there are any enemies left
     enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
     if not enemies_remaining:
+        win_sound.play()  # Play win sound
         print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
 
 
@@ -118,6 +129,7 @@ def check_lose_condition(entities):
     # Check if there are any player ships left
     player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
     if not player_ships_remaining:
+        lose_sound.play()  # Play lose sound
         print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
 
 # Maybe add a map class
@@ -176,6 +188,9 @@ def shipSelection(currShip):
                 
 def attack(ship, unit):
     atk = ship.attack
+    attack_sound.play()  # Play attack sound for every attack
+    if unit.shields < atk and unit.health > 0:
+        damage_sound.play()  # Play taking damage sound if the unit survives
     if unit.shields < atk:
         bonus_atk = atk - unit.shields
         unit.shields = 0 
@@ -185,6 +200,7 @@ def attack(ship, unit):
     if unit.health <= 0:
         unit.health = 0
         entities.remove(unit)
+        death_sound.play()  # Play death sound
    
 
 
