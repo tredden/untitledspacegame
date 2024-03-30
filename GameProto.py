@@ -5,6 +5,7 @@ import sysconfig
 print(sysconfig.get_paths()["purelib"])
 import pygame
 import random
+import math
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -43,19 +44,12 @@ targeting = False
 class Unit:
     def __init__(self, pos, name, type=None):
 
-
         self.name = name
         self.position = pos  
 
         # Change stats depending on ship type. default to scout
-        if(type=="Scout"):
-            self.movement_range = 3
-            self.attack_range = 2
-            self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 50
-            self.attacksleft = 1
-        elif(type=="Mothership"):
+        if(type=="Mothership"):
+            self.type = "Mothership"
             self.movement_range = 1
             self.attack_range = 3
             self.maxhealth = 500
@@ -63,6 +57,7 @@ class Unit:
             self.attack = 100
             self.attacksleft = 1
         else:
+            self.type = "Scout"
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
@@ -73,6 +68,8 @@ class Unit:
         self.health = self.maxhealth
         self.shields = self.maxshields
         self.moves_left = self.movement_range
+
+        self.isMoving = False
 
 
     def info(self):
@@ -142,6 +139,17 @@ def draw(self, screen, sub_width, offset):
 def calcDist(a,b):
     return abs(a[0]-b[0])+abs(a[1]-b[1])
 
+# dot product of two vectors
+def dotProduct(a,b):
+    return a[0]*b[0] + a[1]*b[1]
+
+#angle between two vectors
+def getAngle(a,b):
+    try:
+        return math.acos(dotProduct(a,b)/(math.hypot(*a)*math.hypot(*b)))
+    except:
+        return 0
+
 # show valid ship movement and attacking locations
 nabes = [(0,1),(1,0),(0,-1),(-1,0)]
 
@@ -194,6 +202,36 @@ def attack(ship, unit):
         unit.health = 0
    
 
+class Animation():
+    def __init__(self):
+        pass
+
+    def play(self):
+        pass
+
+class Anim_Move(Animation):
+    def __init__(self, entity, pos1, pos2):
+        super().__init__()
+        self.pos1 = pos1
+        self.pos2 = pos2
+        self.entity = entity
+        if(entity.team == "Enemy" and entity.type=="Scout"):
+            self.forward = (0,1)
+        else:
+            self.forward = (0,-1)
+        #entity.isMoving = True
+
+    def play(self):
+        pos1 = self.pos1
+        pos2 = self.pos2
+        entity = self.entity
+        
+        if(entity.type=="Scout"): #rotate to heading
+            angle = getAngle(self.forward, (pos2[0]-pos1[0],pos2[1]-pos1[1]))
+            print(angle)
+            for i in range(60):
+                pass
+        
 
 ### GAME INITIALIZATION ###
 pygame.init()
@@ -230,6 +268,7 @@ grid_count = 8
 block_size = 75
 offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
+animations=[]
 running = True
 
 def enemy_move_and_attack(entities, grid_count):
@@ -252,6 +291,8 @@ while running:
 
     # Did the user click the window close button?
     for event in pygame.event.get():
+        if event.type == QUIT:
+            running = False
         if event.type == KEYDOWN:
             # If the Esc key is pressed, then exit the main loop
             if event.key == K_ESCAPE:
@@ -270,8 +311,6 @@ while running:
                 for entity in entities:
                     entity.attacksleft = 1
 
-        if event.type == QUIT:
-            running = False
         if event.type == MOUSEBUTTONDOWN:
             if pygame.mouse.get_pressed()[0]:
                 if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
@@ -280,7 +319,7 @@ while running:
                     print(selection)
 
                     for entity in entities:
-                        if entity.position == selection:
+                        if entity.position == selection and not entity.isMoving:
                             new_selection = True
                             current_ship = entity
                             info = entity.info()
@@ -293,6 +332,9 @@ while running:
                     if new_selection:
                         shipSelection(current_ship)
                         if selection in move_highlight and current_ship.team == "Player":
+                            print(current_ship.type)
+                            anim = Anim_Move(current_ship, current_ship.position, selection)
+                            anim.play()
                             dist = calcDist(selection, current_ship.position)
                             current_ship.moves_left -= dist
                             current_ship.position = selection
