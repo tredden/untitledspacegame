@@ -21,6 +21,12 @@ from pygame.locals import (
     QUIT,
 )
 
+#music
+pygame.mixer.init()
+pygame.mixer.music.load('./Music/Vortex.mp3')
+pygame.mixer.music.play(-1)
+
+
 #Spaceships
 pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
 bswidth = pl_ship.get_rect().width
@@ -434,3 +440,4 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
+
