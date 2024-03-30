@@ -57,6 +57,7 @@ class Unit:
 
         self.name = name
         self.position = pos  
+        self.destroyed = False
 
         # Change stats depending on ship type. default to scout
         if(type=="Scout"):
@@ -113,16 +114,7 @@ class Enemy(Unit):
             self.image = en_ship
         self.team = "Enemy"
 
-    # Movement control for enemies
-    def make_move(self, entities, grid_count):
-      valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-      valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
 
-      if valid_moves:
-          new_pos = random.choice(valid_moves)
-          self.position = new_pos
-      else:
-          return None
 
 # Function to check win condition 
 def check_win_condition(entities):
@@ -206,8 +198,9 @@ def attack(ship, unit):
         unit.health -= bonus_atk
     else:
         unit.shields -= atk
-    if unit.health < 0:
+    if unit.health <= 0:
         unit.health = 0
+        entities.remove(unit)
         death_sound.play()  # Play death sound
    
 
@@ -249,10 +242,23 @@ offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 running = True
 
-def enemy_move_and_attack(entities, grid_count):
+def make_move(self):
+        valid_moves = []
+        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        moves = [move for move in moves if all(thing.position != move for thing in entities if not thing.destroyed)]
+        for move in moves:
+            if calcDist(self.position, move) <= self.movement_range:
+                valid_moves.append(move)
+
+        if valid_moves != [] and random.randrange(5) != 4:
+            new_pos = random.choice(valid_moves)
+            self.position = new_pos
+        
+
+def enemy_move_and_attack():
     for entity in entities:
         if entity.team == "Enemy":
-            entity.make_move(entities, grid_count)
+            make_move(entity)
             for target in entities:
                 if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
@@ -274,9 +280,10 @@ while running:
             if event.key == K_ESCAPE:
                 running = False
             if event.key == K_RETURN:
-                enemy_move_and_attack(entities, grid_count)
+                enemy_move_and_attack()
                 check_win_condition(entities)  # checking win condition after enemy action
                 check_lose_condition(entities)  # checking lose condition after enemy action
+                print("Enemy's turn!")
                 # Restting move count for players ships
                 for entity in entities:
                     if entity.team == "Player":
@@ -295,6 +302,7 @@ while running:
                     previous = current_ship
                     selection = (mousexx, mouseyy)
                     print(selection)
+                    new_selection = False
 
                     for entity in entities:
                         if entity.position == selection:
@@ -311,6 +319,7 @@ while running:
                         shipSelection(current_ship)
                         if selection in move_highlight and current_ship.team == "Player":
                             dist = calcDist(selection, current_ship.position)
+                            print(dist)
                             current_ship.moves_left -= dist
                             current_ship.position = selection
                             shipSelection(current_ship)
@@ -318,7 +327,7 @@ while running:
                             check_lose_condition(entities) # checking lose condition after player action
                 # The end turn button have been pressed
                 elif end_turn_button_rect.collidepoint(mousex, mousey):
-                    enemy_move_and_attack(entities, grid_count)
+                    enemy_move_and_attack()
                     check_win_condition(entities)  # Checking win condition after enemy action
                     check_lose_condition(entities)  # Checking lose condition after enemy action
                     print("Enemy's turn!")
@@ -326,6 +335,9 @@ while running:
                         if entity.team == "Player":
                             entity.moves_left = entity.movement_range
                     print("Your turn to move!")
+                    for entity in entities:
+                        entity.attacksleft = 1
+
 
     screen.fill((0, 0, 0))
 
