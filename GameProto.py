@@ -16,6 +16,7 @@ lose_sound = pygame.mixer.Sound("Sound Effects/gameover_loud.mp3")
 damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
 attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
 
+
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
 
@@ -32,18 +33,18 @@ from pygame.locals import (
 )
 
 #Spaceships
-pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
+pl_ship = pygame.image.load("Images/blueships1.png")
 bswidth = pl_ship.get_rect().width
 bsheight = pl_ship.get_rect().height
-en_ship = pygame.image.load("./Images/Red Spaceship.png")
+en_ship = pygame.image.load("Images/redfighter0005.png")
 eswidth = en_ship.get_rect().width
 esheight = en_ship.get_rect().height
 
 #Motherships
-pl_mothership = pygame.image.load("./Images/Blue Mothership.png")
+pl_mothership = pygame.image.load("Images/WB_baseu3_d0.png")
 bmwidth = pl_mothership.get_rect().width
 bmheight = pl_mothership.get_rect().height
-en_mothership = pygame.image.load("./Images/Red Mothership.png")
+en_mothership = pygame.image.load("Images/tribase-u2-d0.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
@@ -261,7 +262,7 @@ def enemy_move_and_attack(entities, grid_count):
                     
 
 while running:
-
+    
     mousex, mousey = pygame.mouse.get_pos()
     mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
     mouseyy = round((mousey - offset - block_size/2)/block_size)
