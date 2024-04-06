@@ -211,7 +211,7 @@ class Animation():
     def play(self):
         self.done = True
 
-class Anim_Move(Animation):
+class Anim_Attack(Animation): #wip
     def __init__(self, entity, pos1, pos2):
         super().__init__()
         self.pos1 = pos1
@@ -228,7 +228,30 @@ class Anim_Move(Animation):
         pos1 = self.pos1
         pos2 = self.pos2
         entity = self.entity
+        
+        entity.isMoving = False
+        yield None
+        return
+
+class Anim_Move(Animation):
+    def __init__(self, entity, pos1, pos2):
+        super().__init__()
+        self.pos1 = pos1
+        self.pos2 = pos2
+        self.entity = entity
+        if(entity.team == "Enemy" and entity.type=="Scout"):
+            self.forward = (0,1)
+        else:
+            self.forward = (0,-1)
+        self.frame = self.play()
+        
+
+    def play(self):
+        pos1 = self.pos1
+        pos2 = self.pos2
+        entity = self.entity
         currPos = pos1
+        entity.isMoving = True
         if(entity.type=="Scout"): #rotate to heading
             angle = getAngle(self.forward, (pos2[0]-pos1[0],pos2[1]-pos1[1]))
             for i in range(20):
@@ -243,7 +266,7 @@ class Anim_Move(Animation):
                 yield (image,currPos)
         elif(entity.type=="Mothership"): #no rot required
             for i in range(120):
-                currPos = (pos1[0] + (pos2[0]-pos1[0])*(i/60), pos1[1] + (pos2[1]-pos1[1])*(i/120))
+                currPos = (pos1[0] + (pos2[0]-pos1[0])*(i/120), pos1[1] + (pos2[1]-pos1[1])*(i/120))
                 yield (entity.image,currPos)
 
         entity.isMoving = False
@@ -286,21 +309,41 @@ grid_count = 8
 block_size = 75
 offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
-animations=[]
-running = True
+animations=[] #list of currently playing animations
+endturn_animations=[] #animations to play enemy moves
 
+                                
 def enemy_move_and_attack(entities, grid_count):
     for entity in entities:
         if entity.team == "Enemy":
+            oldPos = entity.position
             entity.make_move(entities, grid_count)
+            if(oldPos != entity.position):
+                yield Anim_Move(entity, oldPos, entity.position)
             for target in entities:
                 if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
                     print(f"{entity.name} attacks {target.name}!")
                     attack(entity, target)
                     if target.health <= 0:
                         print(f"{target.name} has been destroyed!")
-                    
 
+end_generator = None # end turn object
+def end_turn(entities, grid_count):
+    for i in enemy_move_and_attack(entities, grid_count):
+        yield i
+    check_win_condition(entities)  # checking win condition after enemy action
+    check_lose_condition(entities)  # checking lose condition after enemy action
+    # Restting move count for players ships
+    for entity in entities:
+        entity.attacksleft = 1
+        if entity.team == "Player":
+            entity.moves_left = entity.movement_range
+            check_win_condition(entities)  # checking win condition after player has reset
+            check_lose_condition(entities)  # checking lose condition after player has reset
+    print("Your turn to move!")
+        
+
+running = True
 while running:
 
     mousex, mousey = pygame.mouse.get_pos()
@@ -315,61 +358,48 @@ while running:
             # If the Esc key is pressed, then exit the main loop
             if event.key == K_ESCAPE:
                 running = False
-            if event.key == K_RETURN:
-                enemy_move_and_attack(entities, grid_count)
-                check_win_condition(entities)  # checking win condition after enemy action
-                check_lose_condition(entities)  # checking lose condition after enemy action
-                # Restting move count for players ships
-                for entity in entities:
-                    if entity.team == "Player":
-                        entity.moves_left = entity.movement_range
-                        check_win_condition(entities)  # checking win condition after player has reset
-                        check_lose_condition(entities)  # checking lose condition after player has reset
-                print("Your turn to move!")
-                for entity in entities:
-                    entity.attacksleft = 1
+            print(current_player)
+            if current_player=="Player1":
+                if event.key == K_RETURN:
+                    current_player = "Enemy"
+                    end_generator = end_turn(entities, grid_count)
 
         if event.type == MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
-                    previous = current_ship
-                    selection = (mousexx, mouseyy)
-                    print(selection)
+            if current_player=="Player1":
+                if pygame.mouse.get_pressed()[0]:
+                    if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
+                        previous = current_ship
+                        selection = (mousexx, mouseyy)
+                        print(selection)
 
-                    for entity in entities:
-                        if entity.position == selection and not entity.isMoving:
-                            new_selection = True
-                            current_ship = entity
-                            info = entity.info()
-                            break
-                    if previous != None and current_ship.team != None:
-                        if previous.team == "Player" and current_ship.team == "Enemy":
-                            if previous.attacksleft > 0:
-                                attack(previous, current_ship)
-                                previous.attacksleft -= 1
-                    if new_selection:
-                        shipSelection(current_ship)
-                        if selection in move_highlight and current_ship.team == "Player":
-                            print(current_ship.type)
-                            dist = calcDist(selection, current_ship.position)
-                            if(dist>0 and not current_ship.isMoving):
-                                anim = Anim_Move(current_ship, current_ship.position, selection)
-                                animations.append(anim)
-                                current_ship.moves_left -= dist
-                                current_ship.position = selection
-                                shipSelection(current_ship)
-                                check_win_condition(entities)  # checking win condition after player action
-                                check_lose_condition(entities) # checking lose condition after player action
-                # The end turn button have been pressed
-                elif end_turn_button_rect.collidepoint(mousex, mousey):
-                    enemy_move_and_attack(entities, grid_count)
-                    check_win_condition(entities)  # Checking win condition after enemy action
-                    check_lose_condition(entities)  # Checking lose condition after enemy action
-                    print("Enemy's turn!")
-                    for entity in entities:
-                        if entity.team == "Player":
-                            entity.moves_left = entity.movement_range
-                    print("Your turn to move!")
+                        for entity in entities:
+                            if entity.position == selection and not entity.isMoving:
+                                new_selection = True
+                                current_ship = entity
+                                info = entity.info()
+                                break
+                        if previous != None and current_ship.team != None:
+                            if previous.team == "Player" and current_ship.team == "Enemy":
+                                if previous.attacksleft > 0:
+                                    attack(previous, current_ship)
+                                    previous.attacksleft -= 1
+                        if new_selection:
+                            shipSelection(current_ship)
+                            if selection in move_highlight and current_ship.team == "Player":
+                                print(current_ship.type)
+                                dist = calcDist(selection, current_ship.position)
+                                if(dist>0 and not current_ship.isMoving):
+                                    anim = Anim_Move(current_ship, current_ship.position, selection)
+                                    animations.append(anim)
+                                    current_ship.moves_left -= dist
+                                    current_ship.position = selection
+                                    shipSelection(current_ship)
+                                    check_win_condition(entities)  # checking win condition after player action
+                                    check_lose_condition(entities) # checking lose condition after player action
+                    # The end turn button have been pressed
+                    elif end_turn_button_rect.collidepoint(mousex, mousey):
+                        current_player = "Enemy"
+                        end_generator = end_turn(entities, grid_count)
 
     screen.fill((0, 0, 0))
 
@@ -477,6 +507,17 @@ while running:
             width=5
         )
 
+    #do end trurn stuff
+    if end_generator is not None:
+        if not animations:
+            try:
+                animations.append(next(end_generator))
+            except:
+                end_generator = None
+                current_player = "Player1"
+    
+
+    #play the animations
     for anim in animations:
         frame = next(anim.frame) 
         if frame is None:
