@@ -39,6 +39,9 @@ emheight = en_mothership.get_rect().height
 
 targeting = False
 
+
+
+
 # Base Class
 class Unit:
     def __init__(self, pos, name, type=None):
@@ -104,14 +107,21 @@ class Enemy(Unit):
 
     # Movement control for enemies
     def make_move(self, entities, grid_count):
-      valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-      valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
 
-      if valid_moves:
-          new_pos = random.choice(valid_moves)
-          self.position = new_pos
-      else:
-          return None
+        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        moves = [move for move in moves if all(thing.position != move for thing in entities)]
+        moverange = self.movement_range
+        position = self.position
+        valid_moves = []
+        for square in moves:
+            move = calcDist(square, position)
+            if move <= moverange:
+                valid_moves.append(square)
+        if valid_moves:
+            new_pos = random.choice(valid_moves)
+            self.position = new_pos
+        else:
+            return None
 
 # Function to check win condition 
 def check_win_condition(entities):
@@ -216,6 +226,7 @@ entities.append(Enemy((2, 0), "Red Mothership", type="Mothership"))
 move_highlight=[]
 attack_highlight=[]
 selection_highlight=[]
+new_selection = False
 selection=None
 previous=None
 current_ship = None
