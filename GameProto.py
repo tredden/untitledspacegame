@@ -45,7 +45,8 @@ class Unit:
     def __init__(self, pos, name, type=None):
 
         self.name = name
-        self.position = pos  
+        self.position = pos
+        self.rotation = 0
 
         # Change stats depending on ship type. default to scout
         if(type=="Mothership"):
@@ -146,7 +147,8 @@ def dotProduct(a,b):
 #angle between two vectors
 def getAngle(a,b):
     try:
-        return math.acos(dotProduct(a,b)/(math.hypot(*a)*math.hypot(*b)))
+        det = a[0]*b[1] - a[1]*b[0]
+        return math.degrees(math.atan2(det,dotProduct(a,b)))
     except:
         return 0
 
@@ -204,10 +206,10 @@ def attack(ship, unit):
 
 class Animation():
     def __init__(self):
-        pass
+        self.done = False
 
     def play(self):
-        pass
+        self.done = True
 
 class Anim_Move(Animation):
     def __init__(self, entity, pos1, pos2):
@@ -219,19 +221,34 @@ class Anim_Move(Animation):
             self.forward = (0,1)
         else:
             self.forward = (0,-1)
-        #entity.isMoving = True
+        self.frame = self.play()
+        entity.isMoving = True
 
     def play(self):
         pos1 = self.pos1
         pos2 = self.pos2
         entity = self.entity
-        
+        currPos = pos1
         if(entity.type=="Scout"): #rotate to heading
             angle = getAngle(self.forward, (pos2[0]-pos1[0],pos2[1]-pos1[1]))
-            print(angle)
+            for i in range(20):
+                image = pygame.transform.rotate(entity.image, -angle*(i/20))
+                yield (image,currPos)
+            image = pygame.transform.rotate(entity.image, -angle)
             for i in range(60):
-                pass
-        
+                currPos = (pos1[0] + (pos2[0]-pos1[0])*(i/60), pos1[1] + (pos2[1]-pos1[1])*(i/60))
+                yield (image,currPos)
+            for i in range(20):
+                image = pygame.transform.rotate(entity.image, -angle*((20-i)/20))
+                yield (image,currPos)
+        elif(entity.type=="Mothership"): #no rot required
+            for i in range(120):
+                currPos = (pos1[0] + (pos2[0]-pos1[0])*(i/60), pos1[1] + (pos2[1]-pos1[1])*(i/120))
+                yield (entity.image,currPos)
+
+        entity.isMoving = False
+        yield None
+        return
 
 ### GAME INITIALIZATION ###
 pygame.init()
@@ -254,6 +271,7 @@ entities.append(Enemy((2, 0), "Red Mothership", type="Mothership"))
 move_highlight=[]
 attack_highlight=[]
 selection_highlight=[]
+new_selection = False
 selection=None
 previous=None
 current_ship = None
@@ -333,14 +351,15 @@ while running:
                         shipSelection(current_ship)
                         if selection in move_highlight and current_ship.team == "Player":
                             print(current_ship.type)
-                            anim = Anim_Move(current_ship, current_ship.position, selection)
-                            anim.play()
                             dist = calcDist(selection, current_ship.position)
-                            current_ship.moves_left -= dist
-                            current_ship.position = selection
-                            shipSelection(current_ship)
-                            check_win_condition(entities)  # checking win condition after player action
-                            check_lose_condition(entities) # checking lose condition after player action
+                            if(dist>0 and not current_ship.isMoving):
+                                anim = Anim_Move(current_ship, current_ship.position, selection)
+                                animations.append(anim)
+                                current_ship.moves_left -= dist
+                                current_ship.position = selection
+                                shipSelection(current_ship)
+                                check_win_condition(entities)  # checking win condition after player action
+                                check_lose_condition(entities) # checking lose condition after player action
                 # The end turn button have been pressed
                 elif end_turn_button_rect.collidepoint(mousex, mousey):
                     enemy_move_and_attack(entities, grid_count)
@@ -458,15 +477,31 @@ while running:
             width=5
         )
 
+    for anim in animations:
+        frame = next(anim.frame) 
+        if frame is None:
+            animations.remove(anim)
+        else:
+            image, currPos = frame
+            image = pygame.transform.scale(image, (block_size, block_size))
+            screen.blit(image, 
+                (sub_width + currPos[0] * block_size + offset, 
+                currPos[1] * block_size + offset)
+            )
+
     ### Map Entities ###
     for entity in entities:
-        if entity.health > 0:
-          currPos = entity.position
-          image = pygame.transform.scale(entity.image, (block_size, block_size))
-          screen.blit(image, 
-            (sub_width + currPos[0] * block_size + offset, 
-            currPos[1] * block_size + offset)
+        if entity.health > 0 and not entity.isMoving:
+            currPos = entity.position
+            image = pygame.transform.scale(entity.image, (block_size, block_size))
+            screen.blit(image, 
+                (sub_width + currPos[0] * block_size + offset, 
+                currPos[1] * block_size + offset)
         )
+
+    
+
+    
 
 
     # Flip the display
