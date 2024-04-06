@@ -9,6 +9,11 @@ import random
 # Initialize Pygame Mixer
 pygame.mixer.init()
 
+pygame.font.init()  # Explicitly initialize the font module
+
+font = pygame.font.SysFont('arial', 40) if pygame.font.get_fonts() else pygame.font.Font(None, 40)
+
+
 # Load sound effects
 death_sound = pygame.mixer.Sound("Sound Effects/psz_dead.mp3")
 win_sound = pygame.mixer.Sound("Sound Effects/win_loud.mp3")
@@ -32,6 +37,16 @@ from pygame.locals import (
     QUIT,
 )
 
+# Screen setup
+SCREEN_WIDTH = 960
+SCREEN_HEIGHT = 640
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+# Game state
+game_state = "start_menu"
+running = True
+clock = pygame.time.Clock()
+
 #Spaceships
 pl_ship = pygame.image.load("Images/blueships1.png")
 bswidth = pl_ship.get_rect().width
@@ -49,6 +64,8 @@ emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
 targeting = False
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Base Class
 class Unit:
@@ -114,24 +131,91 @@ class Enemy(Unit):
             self.image = en_ship
         self.team = "Enemy"
 
+def draw_start_menu(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    title = font.render('Space GAME', True, (255, 255, 255))  # Render the title text
+    start_button = font.render('Click Escape to Begin', True, (255, 255, 255))  # Render the start instruction text
+    
+    # Blit the title and start button text onto the screen at specified positions
+    screen.blit(title, (SCREEN_WIDTH / 2 - title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(start_button, (SCREEN_WIDTH / 2 - start_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    
+    pygame.display.update()  # Update the display to show the new drawings
 
+def draw_game_over_screen(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    game_over_title = font.render('Game Over', True, (255, 255, 255))  # Render the game over text
+    restart_button = font.render('R - Restart', True, (255, 255, 255))  # Render the restart instruction text
+    quit_button = font.render('Q - Quit', True, (255, 255, 255))  # Render the quit instruction text
+    
+    # Blit the game over title, restart, and quit button texts onto the screen at specified positions
+    screen.blit(game_over_title, (SCREEN_WIDTH / 2 - game_over_title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(restart_button, (SCREEN_WIDTH / 2 - restart_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    screen.blit(quit_button, (SCREEN_WIDTH / 2 - quit_button.get_width() / 2, SCREEN_HEIGHT / 2 + 50))
+    
+    pygame.display.update()  # Update the display to show the new drawings
 
-# Function to check win condition 
-def check_win_condition(entities):
-    # Check if there are any enemies left
-    enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
-    if not enemies_remaining:
-        win_sound.play()  # Play win sound
-        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+# Initialize entities and other game variables outside the game loop
+entities = []
 
+def reset_game():
+    global entities
+    entities = [
+        Player((5,3), "Player Ship 1"),
+        Player((2,6), "Player Ship 2"),
+        Enemy((2,3), "Enemy Ship 1"),
+        Enemy((4,2), "Enemy Ship 2"),
+        Player((5, 7), "Blue Mothership", type="Mothership"),
+        Enemy((2, 0), "Red Mothership", type="Mothership")
+    ]
+    # Reset any other necessary game variables here
 
-# Function to check lose condition
-def check_lose_condition(entities):
-    # Check if there are any player ships left
-    player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
-    if not player_ships_remaining:
-        lose_sound.play()  # Play lose sound
-        print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
+# Main game loop
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        # Handle other events
+
+    if game_state == "start_menu":
+        draw_start_menu(screen)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            reset_game()  # Reset game to initial state
+            game_state = "game"
+
+    elif game_state == "game":
+        # Function to check win condition 
+        def check_win_condition(entities):
+            # Check if there are any enemies left
+            enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
+            if not enemies_remaining:
+                win_sound.play()  # Play win sound
+                print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+
+        # Function to check lose condition
+        def check_lose_condition(entities):
+            # Check if there are any player ships left
+            player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
+            if not player_ships_remaining:
+                lose_sound.play()  # Play lose sound
+                print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
+
+    elif game_state == "game_over":
+        draw_game_over_screen(screen)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            game_state = "start_menu"
+        elif keys[pygame.K_q]:
+            running = False
+            
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
+
 
 # Maybe add a map class
 class Map:
