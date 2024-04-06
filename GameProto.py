@@ -202,6 +202,7 @@ def attack(ship, unit):
         unit.shields -= atk
     if unit.health < 0:
         unit.health = 0
+        entities.remove(unit)
    
 
 
