@@ -249,11 +249,14 @@ def enemy_move_and_attack(entities, grid_count):
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
             for target in entities:
-                if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
-                    print(f"{entity.name} attacks {target.name}!")
-                    attack(entity, target)
-                    if target.health <= 0:
-                        print(f"{target.name} has been destroyed!")
+                if entity.attacksleft > 0:
+                    if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
+                        print(f"{entity.name} attacks {target.name}!")
+                        attack(entity, target)
+                        if target.health <= 0:
+                            print(f"{target.name} has been destroyed!")
+                            entity.attacksleft -= 1
+
                     
 
 while running:
