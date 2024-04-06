@@ -113,7 +113,7 @@ class Enemy(Unit):
         moverange = self.movement_range
         position = self.position
         valid_moves = []
-        for square in moves:
+        for square in moves: 
             move = calcDist(square, position)
             if move <= moverange:
                 valid_moves.append(square)
