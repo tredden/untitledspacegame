@@ -39,9 +39,6 @@ emheight = en_mothership.get_rect().height
 
 targeting = False
 
-
-
-
 # Base Class
 class Unit:
     def __init__(self, pos, name, type=None):
@@ -55,22 +52,22 @@ class Unit:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 50
+            self.maxshields = 100
+            self.attack = 75
             self.attacksleft = 1
         elif(type=="Mothership"):
             self.movement_range = 1
             self.attack_range = 3
-            self.maxhealth = 500
-            self.maxshields = 750
+            self.maxhealth = 250
+            self.maxshields = 300
             self.attack = 100
             self.attacksleft = 1
         else:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 100
+            self.maxshields = 100
+            self.attack = 75
             self.attacksleft = 1
 
         self.health = self.maxhealth
@@ -107,6 +104,8 @@ class Enemy(Unit):
 
     # Movement control for enemies
     def make_move(self, entities, grid_count):
+        valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
 
         moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
         moves = [move for move in moves if all(thing.position != move for thing in entities)]
