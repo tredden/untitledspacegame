@@ -1,5 +1,6 @@
 # Space Game
 
+
 # Import and initialize the pygame library
 import pygame
 import random
