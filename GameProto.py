@@ -48,22 +48,22 @@ class Unit:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 50
+            self.maxshields = 100
+            self.attack = 75
             self.attacksleft = 1
         elif(type=="Mothership"):
             self.movement_range = 1
             self.attack_range = 3
-            self.maxhealth = 500
-            self.maxshields = 750
+            self.maxhealth = 250
+            self.maxshields = 300
             self.attack = 100
             self.attacksleft = 1
         else:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 100
+            self.maxshields = 100
+            self.attack = 75
             self.attacksleft = 1
 
         self.health = self.maxhealth
@@ -103,9 +103,21 @@ class Enemy(Unit):
         valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
         valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
 
+        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        moves = [move for move in moves if all(thing.position != move for thing in entities)]
+        moverange = self.movement_range
+        position = self.position
+        valid_moves = []
+        for square in moves: 
+            move = calcDist(square, position)
+            if move <= moverange:
+                valid_moves.append(square)
         if valid_moves:
             new_pos = random.choice(valid_moves)
             self.position = new_pos
+        else:
+            return None
+
 
 # Health Pack power up
 class HealthPack:
@@ -215,8 +227,7 @@ def attack(ship, unit):
         unit.shields -= atk
     if unit.health < 0:
         unit.health = 0
-
-
+        entities.remove(unit)
 
 ### GAME INITIALIZATION ###
 pygame.init()
@@ -248,6 +259,7 @@ health_packs = [
 move_highlight=[]
 attack_highlight=[]
 selection_highlight=[]
+new_selection = False
 selection=None
 previous=None
 current_ship = None
@@ -269,11 +281,13 @@ def enemy_move_and_attack(entities, grid_count):
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
             for target in entities:
-                if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
-                    print(f"{entity.name} attacks {target.name}!")
-                    attack(entity, target)
-                    if target.health <= 0:
-                        print(f"{target.name} has been destroyed!")
+                if entity.attacksleft > 0:
+                    if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
+                        print(f"{entity.name} attacks {target.name}!")
+                        attack(entity, target)
+                        if target.health <= 0:
+                            print(f"{target.name} has been destroyed!")
+                            entity.attacksleft -= 1
 
     # Checking if enemy have landed on a health pack
     for pack in health_packs:
