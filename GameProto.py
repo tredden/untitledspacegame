@@ -50,21 +50,24 @@ class Unit:
             self.maxhealth = 100
             self.maxshields = 100
             self.attack = 75
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
         elif(type=="Mothership"):
             self.movement_range = 1
             self.attack_range = 3
             self.maxhealth = 250
             self.maxshields = 300
             self.attack = 100
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
         else:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
             self.maxshields = 100
             self.attack = 75
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
 
         self.health = self.maxhealth
         self.shields = self.maxshields
@@ -297,10 +300,12 @@ def player_end_turn(entities, grid_count):
     for entity in entities:
         if entity.team == "Player":
             entity.moves_left = entity.movement_range
+            entity.attacksleft = entity.attacksPerRound
     # Checking if player have landed on a health pack
     print("Checking if a spaceship have laned on a power up...")
     for pack in health_packs:
         pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
+    
 
 while running:
 
@@ -451,6 +456,21 @@ while running:
     # Draw Health Packs
     for pack in health_packs:
         pack.draw(screen, block_size, offset, sub_width)
+
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
+        pygame.draw.rect(
+            screen,
+            (200, 200, 0),
+            (
+                round(mousexx) * block_size + (sub_width + offset), 
+                round(mouseyy) * block_size + offset,
+                block_size, block_size
+            ),
+            width=5
+        )
 
     ### Map Entities ###
     for entity in entities:
