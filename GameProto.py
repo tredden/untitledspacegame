@@ -1,4 +1,4 @@
-# Space Game
+## Space Game
 
 # Import and initialize the pygame library
 import pygame
@@ -11,12 +11,27 @@ from pygame.locals import (
     QUIT,
     K_ESCAPE,
     K_RETURN,
+    K_SPACE,
+    K_r,
+    K_q
 )
 
-# music
+# mu
+
+
+game_state = "start_menu"
+running = True
+clock = pygame.time.Clock()
+
 pygame.mixer.init()
 pygame.mixer.music.load('./Music/Vortex.mp3')
 pygame.mixer.music.play(-1)
+
+death_sound = pygame.mixer.Sound("Sound Effects/psz_dead.mp3")
+win_sound = pygame.mixer.Sound("Sound Effects/win_loud.mp3")
+lose_sound = pygame.mixer.Sound("Sound Effects/gameover_loud.mp3")
+damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
+attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
 
 # Spaceships
 pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
@@ -152,21 +167,20 @@ class HealthPack:
 
 
 # Function to check win condition 
-def check_win_condition(entities):
+def check_game_state(entities):
     # Check if there are any enemies left
+    global game_state
     enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
-    if not enemies_remaining:
-        print("YOU WON! All enemies have been defeated! You have saved the galaxy!")
-
-
-# Function to check lose condition
-def check_lose_condition(entities):
-    # Check if there are any player ships left
     player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
+    if not enemies_remaining:
+        win_sound.play()  # Play win sound
+        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+        game_state = "game_over"
     if not player_ships_remaining:
+        lose_sound.play()  # Play lose sound
         print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
+        game_state = "game_over"
 
-# Maybe add a map class
 class Map:
     def __init__(self):
         pass
@@ -283,6 +297,7 @@ def enemy_move_and_attack(entities, grid_count):
     for entity in entities:
         if entity.team == "Enemy":
             entity.make_move(entities, grid_count)
+            entity.attacksleft = entity.attacksPerRound
             for target in entities:
                 if entity.attacksleft > 0:
                     if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
@@ -305,105 +320,162 @@ def player_end_turn(entities, grid_count):
     print("Checking if a spaceship have laned on a power up...")
     for pack in health_packs:
         pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
+
+def draw_start_menu(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    title = font.render('Space GAME', True, (255, 255, 255))  # Render the title text
+    start_button = font.render('Click Escape to Begin', True, (255, 255, 255))  # Render the start instruction text
     
+    # Blit the title and start button text onto the screen at specified positions
+    screen.blit(title, (SCREEN_WIDTH / 2 - title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(start_button, (SCREEN_WIDTH / 2 - start_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    
+    pygame.display.update()  # Update the display to show the new drawings
+
+def draw_game_over_screen(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    game_over_title = font.render('Game Over', True, (255, 255, 255))  # Render the game over text
+    restart_button = font.render('R - Restart', True, (255, 255, 255))  # Render the restart instruction text
+    quit_button = font.render('Q - Quit', True, (255, 255, 255))  # Render the quit instruction text
+    
+    # Blit the game over title, restart, and quit button texts onto the screen at specified positions
+    screen.blit(game_over_title, (SCREEN_WIDTH / 2 - game_over_title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(restart_button, (SCREEN_WIDTH / 2 - restart_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    screen.blit(quit_button, (SCREEN_WIDTH / 2 - quit_button.get_width() / 2, SCREEN_HEIGHT / 2 + 50))
+    
+    pygame.display.update()  # Update the display to show the new drawings
+
+def reset_game():
+    global entities
+    entities = [
+        Player((5,3), "Player Ship 1"),
+        Player((2,6), "Player Ship 2"),
+        Enemy((2,3), "Enemy Ship 1"),
+        Enemy((4,2), "Enemy Ship 2"),
+        Player((5, 7), "Blue Mothership", type="Mothership"),
+        Enemy((2, 0), "Red Mothership", type="Mothership")
+    ]
 
 while running:
-
-    mousex, mousey = pygame.mouse.get_pos()
-    mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
-    mouseyy = round((mousey - offset - block_size/2)/block_size)
-
-    # Did the user click the window close button?
-    for event in pygame.event.get():
-        if event.type == KEYDOWN:
-            # If the Esc key is pressed, then exit the main loop
-            if event.key == K_ESCAPE:
+    if game_state == "start_menu":
+        draw_start_menu(screen)
+        for event in pygame.event.get():
+            if event.type == QUIT:
                 running = False
-            if event.key == K_RETURN:
-                enemy_move_and_attack(entities, grid_count)
-                check_win_condition(entities)  # checking win condition after enemy action
-                check_lose_condition(entities)  # checking lose condition after enemy action
-                print("Your turn to move!")
-                player_end_turn(entities, grid_count)
+            if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    reset_game()  # Reset game to initial state
+                    game_state = "game"
 
-        if event.type == QUIT:
-            running = False
-        if event.type == MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
-                    previous = current_ship
-                    selection = (mousexx, mouseyy)
-                    print(selection)
+    elif game_state == "game":
+        mousex, mousey = pygame.mouse.get_pos()
+        mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
+        mouseyy = round((mousey - offset - block_size/2)/block_size)
 
-                    for entity in entities:
-                        if entity.position == selection:
-                            new_selection = True
-                            current_ship = entity
-                            info = entity.info()
-                            break
-                    if previous != None and current_ship.team != None:
-                        if previous.team == "Player" and current_ship.team == "Enemy":
-                            if previous.attacksleft > 0:
-                                attack(previous, current_ship)
-                                previous.attacksleft -= 1
-                    if new_selection:
-                        shipSelection(current_ship)
-                        if selection in move_highlight and current_ship.team == "Player":
-                            dist = calcDist(selection, current_ship.position)
-                            current_ship.moves_left -= dist
-                            current_ship.position = selection
-                            shipSelection(current_ship)
-                            check_win_condition(entities)  # checking win condition after player action
-                            check_lose_condition(entities) # checking lose condition after player action
-                # The end turn button have been pressed
-                elif end_turn_button_rect.collidepoint(mousex, mousey):
+        # Did the user click the window close button?
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                # If the Esc key is pressed, then exit the main loop
+                if event.key == K_ESCAPE:
+                    running = False
+                if event.key == K_RETURN:
                     enemy_move_and_attack(entities, grid_count)
-                    check_win_condition(entities)  # Checking win condition after enemy action
-                    check_lose_condition(entities)  # Checking lose condition after enemy action
-                    print("Enemy's turn!")
-                    player_end_turn(entities, grid_count)
+                    check_game_state(entities)  # checking win condition after enemy action
                     print("Your turn to move!")
+                    player_end_turn(entities, grid_count)
 
-    screen.fill((0, 0, 0))
+            if event.type == QUIT:
+                running = False
+            if event.type == MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    if mousexx >= 0 and mouseyy >= 0 and mousexx < grid_count and mouseyy < grid_count:
+                        previous = current_ship
+                        selection = (mousexx, mouseyy)
+                        print(selection)
 
-    # Draw menu borders
-    pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
-    pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
+                        for entity in entities:
+                            if entity.position == selection:
+                                new_selection = True
+                                current_ship = entity
+                                info = entity.info()
+                                break
+                        if previous != None and current_ship.team != None:
+                            if previous.team == "Player" and current_ship.team == "Enemy":
+                                if previous.attacksleft > 0:
+                                    attack(previous, current_ship)
+                                    previous.attacksleft -= 1
+                        if new_selection:
+                            shipSelection(current_ship)
+                            if selection in move_highlight and current_ship.team == "Player":
+                                dist = calcDist(selection, current_ship.position)
+                                current_ship.moves_left -= dist
+                                current_ship.position = selection
+                                shipSelection(current_ship)
+                                check_game_state(entities)# checking lose condition after player action
+                    # The end turn button have been pressed
+                    elif end_turn_button_rect.collidepoint(mousex, mousey):
+                        enemy_move_and_attack(entities, grid_count)
+                        check_game_state(entities)
+                        print("Enemy's turn!")
+                        player_end_turn(entities, grid_count)
+                        print("Your turn to move!")
 
-    end_turn_button_rect = pygame.Rect(20, SCREEN_HEIGHT - 50, 100, 30)
+        
+        screen.fill((0, 0, 0))
 
-    # Draw End button 
-    pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
-    font = pygame.font.Font(pygame.font.get_default_font(), 20)
-    end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255, 255, 255))
-    screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
+        # Draw menu borders
+        pygame.draw.rect(screen, (100, 100, 255), (0, 0, sub_width, SCREEN_HEIGHT), width=border_width)
+        pygame.draw.rect(screen, (100, 100, 255), (sub_width, 0, SCREEN_HEIGHT, SCREEN_HEIGHT), width=border_width)
 
-    offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
+        end_turn_button_rect = pygame.Rect(20, SCREEN_HEIGHT - 50, 100, 30)
 
-    # UI Text
-    font = pygame.font.Font(pygame.font.get_default_font(), 24)
-    if current_ship is not None:
-        name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
-        display_image = pygame.transform.scale(current_ship.image, (200, 200))
-        if disp_info != []:
-            disp_info = []
-        for stat in info:
-            disp_info.append(pygame.font.Font.render(font, stat, True, (255, 255, 255)))
+        # Draw End button 
+        pygame.draw.rect(screen, (50, 50, 50), end_turn_button_rect)
+        font = pygame.font.Font(pygame.font.get_default_font(), 20)
+        end_turn_text = pygame.font.Font.render(font, "End Turn", True, (255, 255, 255))
+        screen.blit(end_turn_text, (end_turn_button_rect.x + 10, end_turn_button_rect.y + 5))
 
-        screen.blit(name, (20, 20))
-        screen.blit(display_image, (55, 50))
-        txtpos = 0
-        i = 0
-        for stat in disp_info:
-            txtpos += 50
-            screen.blit(disp_info[i], (20, (sub_width + txtpos)))
-            i += 1
-        # if current_ship.team == Enemy and current_ship.position in any(entity.attack_ for entity in entities if entity.team == "Enemy")
+        offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
-    # Draw Grid
-    for y in range(grid_count):
-        for x in range(grid_count):
-            grid_color = (222, 222, 222)
+        # UI Text
+        font = pygame.font.Font(pygame.font.get_default_font(), 24)
+        if current_ship is not None:
+            name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
+            display_image = pygame.transform.scale(current_ship.image, (200, 200))
+            if disp_info != []:
+                disp_info = []
+            for stat in info:
+                disp_info.append(pygame.font.Font.render(font, stat, True, (255, 255, 255)))
+
+            screen.blit(name, (20, 20))
+            screen.blit(display_image, (55, 50))
+            txtpos = 0
+            i = 0
+            for stat in disp_info:
+                txtpos += 50
+                screen.blit(disp_info[i], (20, (sub_width + txtpos)))
+                i += 1
+            # if current_ship.team == Enemy and current_ship.position in any(entity.attack_ for entity in entities if entity.team == "Enemy")
+
+        # Draw Grid
+        for y in range(grid_count):
+            for x in range(grid_count):
+                grid_color = (222, 222, 222)
+                pygame.draw.rect(
+                    screen,
+                    grid_color,
+                    (
+                        sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                        block_size, block_size
+                    ),
+                    width=2
+                )
+
+        # Highlight movement squares
+        for x, y in move_highlight:
+            grid_color = (100, 100, 255, 100)
             pygame.draw.rect(
                 screen,
                 grid_color,
@@ -414,79 +486,74 @@ while running:
                 width=2
             )
 
-    # Highlight movement squares
-    for x, y in move_highlight:
-        grid_color = (100, 100, 255, 100)
-        pygame.draw.rect(
-            screen,
-            grid_color,
-            (
-                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                block_size, block_size
-            ),
-            width=2
-        )
-
-    # Highlight attack squares
-    for x, y in attack_highlight:
-        grid_color = (255, 100, 100, 100)
-        pygame.draw.rect(
-            screen,
-            grid_color,
-            (
-                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                block_size, block_size
-            ),
-            width=2
-        )
-
-    # Selection highlight
-    for x, y in selection_highlight:
-        grid_color = (255, 255, 100, 100)
-        pygame.draw.rect(
-            screen,
-            grid_color,
-            (
-                sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
-                block_size, block_size
-            ),
-            width=2
-        )
-
-    # Draw Health Packs
-    for pack in health_packs:
-        pack.draw(screen, block_size, offset, sub_width)
-
-    mousex, mousey = pygame.mouse.get_pos()
-    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-    mouseyy = (mousey - offset - block_size/2)/block_size
-    if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
-        pygame.draw.rect(
-            screen,
-            (200, 200, 0),
-            (
-                round(mousexx) * block_size + (sub_width + offset), 
-                round(mouseyy) * block_size + offset,
-                block_size, block_size
-            ),
-            width=5
-        )
-
-    ### Map Entities ###
-    for entity in entities:
-        if entity.health > 0:
-            currPos = entity.position
-            image = pygame.transform.scale(entity.image, (block_size, block_size))
-            screen.blit(image, 
-                (sub_width + currPos[0] * block_size + offset, 
-                currPos[1] * block_size + offset)
+        # Highlight attack squares
+        for x, y in attack_highlight:
+            grid_color = (255, 100, 100, 100)
+            pygame.draw.rect(
+                screen,
+                grid_color,
+                (
+                    sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                    block_size, block_size
+                ),
+                width=2
             )
 
+        # Selection highlight
+        for x, y in selection_highlight:
+            grid_color = (255, 255, 100, 100)
+            pygame.draw.rect(
+                screen,
+                grid_color,
+                (
+                    sub_width + offset + (x * (block_size)), offset + (y * (block_size)),
+                    block_size, block_size
+                ),
+                width=2
+            )
 
-    # Flip the display
-    pygame.display.flip()
+        # Draw Health Packs
+        for pack in health_packs:
+            pack.draw(screen, block_size, offset, sub_width)
 
-    clock.tick(60)
+        mousex, mousey = pygame.mouse.get_pos()
+        mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+        mouseyy = (mousey - offset - block_size/2)/block_size
+        if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
+            pygame.draw.rect(
+                screen,
+                (200, 200, 0),
+                (
+                    round(mousexx) * block_size + (sub_width + offset), 
+                    round(mouseyy) * block_size + offset,
+                    block_size, block_size
+                ),
+                width=5
+            )
+        ### Map Entities ###
+        for entity in entities:
+            if entity.health > 0:
+                currPos = entity.position
+                image = pygame.transform.scale(entity.image, (block_size, block_size))
+                screen.blit(image, 
+                    (sub_width + currPos[0] * block_size + offset, 
+                    currPos[1] * block_size + offset)
+                )
 
+  
+        pygame.display.flip()
+
+        clock.tick(60)
+
+    elif game_state == "game_over":
+        draw_game_over_screen(screen)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            if event.type == KEYDOWN:
+                if event.key == K_r:
+                    game_state = "start_menu"
+                if event.key == K_q or event.key == K_ESCAPE:
+                    running = False 
 # Done! Time to quit.
 pygame.quit()
