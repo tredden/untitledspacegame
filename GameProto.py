@@ -303,9 +303,10 @@ def enemy_move_and_attack(entities, grid_count):
                     if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
                         print(f"{entity.name} attacks {target.name}!")
                         attack(entity, target)
+                        entity.attacksleft -= 1
                         if target.health <= 0:
                             print(f"{target.name} has been destroyed!")
-                            entity.attacksleft -= 1
+                            
 
     # Checking if enemy have landed on a health pack
     for pack in health_packs:
