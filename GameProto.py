@@ -457,6 +457,21 @@ while running:
     for pack in health_packs:
         pack.draw(screen, block_size, offset, sub_width)
 
+    mousex, mousey = pygame.mouse.get_pos()
+    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
+    mouseyy = (mousey - offset - block_size/2)/block_size
+    if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
+        pygame.draw.rect(
+            screen,
+            (200, 200, 0),
+            (
+                round(mousexx) * block_size + (sub_width + offset), 
+                round(mouseyy) * block_size + offset,
+                block_size, block_size
+            ),
+            width=5
+        )
+
     ### Map Entities ###
     for entity in entities:
         if entity.health > 0:
