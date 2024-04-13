@@ -1,25 +1,8 @@
 # Space Game
 
-
 # Import and initialize the pygame library
 import pygame
 import random
-
-# Initialize Pygame Mixer
-pygame.mixer.init()
-
-pygame.font.init()  # Explicitly initialize the font module
-
-font = pygame.font.SysFont('arial', 40) if pygame.font.get_fonts() else pygame.font.Font(None, 40)
-
-
-# Load sound effects
-death_sound = pygame.mixer.Sound("Sound Effects/psz_dead.mp3")
-win_sound = pygame.mixer.Sound("Sound Effects/win_loud.mp3")
-lose_sound = pygame.mixer.Sound("Sound Effects/gameover_loud.mp3")
-damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
-attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
-
 
 # Import pygame.locals for easier access to key coordinates
 from pygame.locals import (
@@ -30,29 +13,31 @@ from pygame.locals import (
     K_RETURN,
     K_SPACE,
     K_r,
-    K_q,
+    K_q
 )
 
-# Screen setup
-SCREEN_WIDTH = 960
-SCREEN_HEIGHT = 640
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# mu
 
-# Game state
+
 game_state = "start_menu"
 running = True
 clock = pygame.time.Clock()
 
-# music
 pygame.mixer.init()
 pygame.mixer.music.load('./Music/Vortex.mp3')
 pygame.mixer.music.play(-1)
+
+death_sound = pygame.mixer.Sound("Sound Effects/psz_dead.mp3")
+win_sound = pygame.mixer.Sound("Sound Effects/win_loud.mp3")
+lose_sound = pygame.mixer.Sound("Sound Effects/gameover_loud.mp3")
+damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
+attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
 
 # Spaceships
 pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
 bswidth = pl_ship.get_rect().width
 bsheight = pl_ship.get_rect().height
-en_ship = pygame.image.load("Images/redfighter0005.png")
+en_ship = pygame.image.load("./Images/Red Spaceship.png")
 eswidth = en_ship.get_rect().width
 esheight = en_ship.get_rect().height
 
@@ -60,21 +45,18 @@ esheight = en_ship.get_rect().height
 pl_mothership = pygame.image.load("./Images/Blue Mothership.png")
 bmwidth = pl_mothership.get_rect().width
 bmheight = pl_mothership.get_rect().height
-en_mothership = pygame.image.load("Images/tribase-u2-d0.png")
+en_mothership = pygame.image.load("./Images/Red Mothership.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
 # Load the Health Pack image
 health_pack_image = pygame.image.load("./Images/Health Pack.png")
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
 # Base Class
 class Unit:
     def __init__(self, pos, name, type=None):
         self.name = name
         self.position = pos  
-        self.destroyed = False
 
         # Change stats depending on ship type. default to scout
         if(type=="Scout"):
@@ -83,21 +65,24 @@ class Unit:
             self.maxhealth = 100
             self.maxshields = 100
             self.attack = 75
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
         elif(type=="Mothership"):
             self.movement_range = 1
             self.attack_range = 3
             self.maxhealth = 250
             self.maxshields = 300
             self.attack = 100
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
         else:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
             self.maxshields = 100
             self.attack = 75
-            self.attacksleft = 1
+            self.attacksPerRound = 1
+            self.attacksleft = self.attacksPerRound
 
         self.health = self.maxhealth
         self.shields = self.maxshields
@@ -130,7 +115,7 @@ class Enemy(Unit):
         else:
             self.image = en_ship
         self.team = "Enemy"
-    
+
     # Movement control for enemies
     def make_move(self, entities, grid_count):
         valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
@@ -150,6 +135,7 @@ class Enemy(Unit):
             self.position = new_pos
         else:
             return None
+
 
 # Health Pack power up
 class HealthPack:
@@ -178,7 +164,23 @@ class HealthPack:
               return True
       return False
 
-# Maybe add a map class
+
+
+# Function to check win condition 
+def check_game_state(entities):
+    # Check if there are any enemies left
+    global game_state
+    enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
+    player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
+    if not enemies_remaining:
+        win_sound.play()  # Play win sound
+        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+        game_state = "game_over"
+    if not player_ships_remaining:
+        lose_sound.play()  # Play lose sound
+        print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
+        game_state = "game_over"
+
 class Map:
     def __init__(self):
         pass
@@ -234,21 +236,15 @@ def shipSelection(currShip):
 
 def attack(ship, unit):
     atk = ship.attack
-    attack_sound.play()  # Play attack sound for every attack
-    if unit.shields < atk and unit.health > 0:
-        damage_sound.play()  # Play taking damage sound if the unit survives
     if unit.shields < atk:
         bonus_atk = atk - unit.shields
         unit.shields = 0 
         unit.health -= bonus_atk
     else:
         unit.shields -= atk
-    if unit.health <= 0:
+    if unit.health < 0:
         unit.health = 0
         entities.remove(unit)
-        death_sound.play()  # Play death sound
-   
-
 
 ### GAME INITIALIZATION ###
 pygame.init()
@@ -297,23 +293,11 @@ offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 running = True
 
-def make_move(self):
-        valid_moves = []
-        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-        moves = [move for move in moves if all(thing.position != move for thing in entities if not thing.destroyed)]
-        for move in moves:
-            if calcDist(self.position, move) <= self.movement_range:
-                valid_moves.append(move)
-
-        if valid_moves != [] and random.randrange(5) != 4:
-            new_pos = random.choice(valid_moves)
-            self.position = new_pos
-        
-
-def enemy_move_and_attack():
+def enemy_move_and_attack(entities, grid_count):
     for entity in entities:
         if entity.team == "Enemy":
-            make_move(entity)
+            entity.make_move(entities, grid_count)
+            entity.attacksleft = entity.attacksPerRound
             for target in entities:
                 if entity.attacksleft > 0:
                     if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
@@ -331,11 +315,11 @@ def player_end_turn(entities, grid_count):
     for entity in entities:
         if entity.team == "Player":
             entity.moves_left = entity.movement_range
+            entity.attacksleft = entity.attacksPerRound
     # Checking if player have landed on a health pack
     print("Checking if a spaceship have laned on a power up...")
     for pack in health_packs:
         pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
-
 
 def draw_start_menu(screen):
     screen.fill((0, 0, 0))  # Clear screen with black
@@ -363,29 +347,6 @@ def draw_game_over_screen(screen):
     
     pygame.display.update()  # Update the display to show the new drawings
 
-# Function to check win condition 
-def check_win_condition(entities):
-    # Check if there are any enemies left
-    enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
-    if not enemies_remaining:
-        win_sound.play()  # Play win sound
-        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
-        return True
-    return False
-
-# Function to check lose condition
-def check_lose_condition(entities):
-    # Check if there are any player ships left
-    player_ships_remaining = any(entity for entity in entities if entity.team == "Player" and entity.health > 0)
-    if not player_ships_remaining:
-        lose_sound.play()  # Play lose sound
-        print("YOU LOST! All your ships have been destroyed! The galaxy is doomed! GAME OVER!")
-        return True
-    return False
-
-# Initialize entities and other game variables outside the game loop
-entities = []
-
 def reset_game():
     global entities
     entities = [
@@ -396,9 +357,7 @@ def reset_game():
         Player((5, 7), "Blue Mothership", type="Mothership"),
         Enemy((2, 0), "Red Mothership", type="Mothership")
     ]
-    # Reset any other necessary game variables here
 
-# Main game loop
 while running:
     if game_state == "start_menu":
         draw_start_menu(screen)
@@ -409,14 +368,8 @@ while running:
                 if event.key == K_SPACE:
                     reset_game()  # Reset game to initial state
                     game_state = "game"
-                    print("start!")
 
     elif game_state == "game":
-        if check_win_condition(entities):  # checking win condition after enemy action
-            game_state = "game_over"
-        if check_lose_condition(entities):  # checking lose condition after enemy action
-            game_state = "game_over"
-        
         mousex, mousey = pygame.mouse.get_pos()
         mousexx = round((mousex - sub_width - offset - block_size/2)/block_size)
         mouseyy = round((mousey - offset - block_size/2)/block_size)
@@ -428,12 +381,8 @@ while running:
                 if event.key == K_ESCAPE:
                     running = False
                 if event.key == K_RETURN:
-                    enemy_move_and_attack()
-                    print("Enemy's turn!")
-                    # Restting move count for players ships
-                    for entity in entities:
-                        if entity.team == "Player":
-                            entity.moves_left = entity.movement_range
+                    enemy_move_and_attack(entities, grid_count)
+                    check_game_state(entities)  # checking win condition after enemy action
                     print("Your turn to move!")
                     player_end_turn(entities, grid_count)
 
@@ -445,7 +394,6 @@ while running:
                         previous = current_ship
                         selection = (mousexx, mouseyy)
                         print(selection)
-                        new_selection = False
 
                         for entity in entities:
                             if entity.position == selection:
@@ -462,20 +410,19 @@ while running:
                             shipSelection(current_ship)
                             if selection in move_highlight and current_ship.team == "Player":
                                 dist = calcDist(selection, current_ship.position)
-                                print(dist)
                                 current_ship.moves_left -= dist
                                 current_ship.position = selection
                                 shipSelection(current_ship)
+                                check_game_state(entities)# checking lose condition after player action
                     # The end turn button have been pressed
                     elif end_turn_button_rect.collidepoint(mousex, mousey):
-                        enemy_move_and_attack()
+                        enemy_move_and_attack(entities, grid_count)
+                        check_game_state(entities)
                         print("Enemy's turn!")
                         player_end_turn(entities, grid_count)
                         print("Your turn to move!")
-                        for entity in entities:
-                            entity.attacksleft = 1
 
-
+        
         screen.fill((0, 0, 0))
 
         # Draw menu borders
@@ -569,22 +516,20 @@ while running:
         for pack in health_packs:
             pack.draw(screen, block_size, offset, sub_width)
 
-        # show mouse-selected grid square
         mousex, mousey = pygame.mouse.get_pos()
         mousexx = (mousex - sub_width - offset - block_size/2)/block_size
         mouseyy = (mousey - offset - block_size/2)/block_size
-        if(mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count-0.5 and mouseyy < grid_count-0.5):
+        if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
             pygame.draw.rect(
                 screen,
                 (200, 200, 0),
                 (
-                    round(mousexx)*block_size + (sub_width + offset), 
-                    round(mouseyy)*block_size + offset,
+                    round(mousexx) * block_size + (sub_width + offset), 
+                    round(mouseyy) * block_size + offset,
                     block_size, block_size
                 ),
                 width=5
             )
-
         ### Map Entities ###
         for entity in entities:
             if entity.health > 0:
@@ -594,7 +539,12 @@ while running:
                     (sub_width + currPos[0] * block_size + offset, 
                     currPos[1] * block_size + offset)
                 )
-    
+
+  
+        pygame.display.flip()
+
+        clock.tick(60)
+
     elif game_state == "game_over":
         draw_game_over_screen(screen)
         for event in pygame.event.get():
@@ -604,10 +554,6 @@ while running:
                 if event.key == K_r:
                     game_state = "start_menu"
                 if event.key == K_q or event.key == K_ESCAPE:
-                    running = False
-            
-    pygame.display.flip()
-    clock.tick(60)
-
+                    running = False 
 # Done! Time to quit.
 pygame.quit()
