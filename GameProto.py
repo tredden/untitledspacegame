@@ -16,9 +16,6 @@ from pygame.locals import (
     K_q
 )
 
-# mu
-
-
 game_state = "start_menu"
 running = True
 clock = pygame.time.Clock()
@@ -49,8 +46,11 @@ en_mothership = pygame.image.load("./Images/Red Mothership.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
-# Load the Health Pack image
+# Health Pack
 health_pack_image = pygame.image.load("./Images/Health Pack.png")
+
+# Asteroid
+asteroid_image = pygame.image.load("./Images/Asteroid1.png")
 
 # Base Class
 class Unit:
@@ -136,35 +136,45 @@ class Enemy(Unit):
         else:
             return None
 
-
 # Health Pack power up
 class HealthPack:
-  def __init__(self, pos, block_size):
-      self.position = pos
-      self.image = pygame.image.load("./Images/Health Pack.png")
-      self.image = pygame.transform.scale(self.image, (block_size, block_size)) 
+    def __init__(self, pos, block_size):
+        self.position = pos
+        self.image = health_pack_image
+        self.image = pygame.transform.scale(self.image, (block_size, block_size)) 
 
-  def draw(self, screen, block_size, offset, sub_width):
-      screen.blit(self.image, (
-          sub_width + self.position[0] * block_size + offset,
-          self.position[1] * block_size + offset)
-      )
+    def draw(self, screen, block_size, offset, sub_width):
+        screen.blit(self.image, (
+            sub_width + self.position[0] * block_size + offset,
+            self.position[1] * block_size + offset)
+        )
 
-  def check_collision(self, player_ships, player_motherships):
-      for ship in player_ships + player_motherships:
-          if self.position == ship.position:
-              print(f"Power up was detected and it went to {ship.name}!")
-              initial_health = ship.health
-              ship.health += 20 #How much each health pack heals
-              if ship.health > ship.maxhealth:
-                  ship.health = ship.maxhealth
-              if initial_health < ship.health:
-                  print(f"{ship.name} has been healed to {ship.health} HP!")
-              health_packs.remove(self)
-              return True
-      return False
+    def check_collision(self, player_ships, player_motherships):
+        for ship in player_ships + player_motherships:
+            if self.position == ship.position:
+                print(f"Power up was detected and it went to {ship.name}!")
+                initial_health = ship.health
+                ship.health += 20 #How much each health pack heals
+                if ship.health > ship.maxhealth:
+                    ship.health = ship.maxhealth
+                if initial_health < ship.health:
+                    print(f"{ship.name} has been healed to {ship.health} HP!")
+                health_packs.remove(self)
+                return True
+        return False
 
+# Asteroid
+class Asteroid:
+    def __init__(self, pos, block_size):
+        self.position = pos
+        self.image = asteroid_image
+        self.image = pygame.transform.scale(self.image, (block_size, block_size))
 
+    def draw(self, screen, block_size, offset, sub_width):
+        screen.blit(self.image, (
+            sub_width + self.position[0] * block_size + offset,
+            self.position[1] * block_size + offset)
+        )
 
 # Function to check win condition 
 def check_game_state(entities):
@@ -273,6 +283,22 @@ health_packs = [
     HealthPack((6, 3), block_size)   
 ]
 
+
+asteroids = [
+    Asteroid((3, 2), block_size),
+    Asteroid((5, 5), block_size),
+    Asteroid((7, 3), block_size),
+    Asteroid((0, 2), block_size),
+    Asteroid((1, 5), block_size),
+    Asteroid((6, 0), block_size),
+    Asteroid((3, 7), block_size),
+    Asteroid((3, 4), block_size),
+    Asteroid((1, 0), block_size),
+    Asteroid((7, 6), block_size),
+    Asteroid((7, 1), block_size)
+]
+
+
 move_highlight=[]
 attack_highlight=[]
 selection_highlight=[]
@@ -306,7 +332,6 @@ def enemy_move_and_attack(entities, grid_count):
                         entity.attacksleft -= 1
                         if target.health <= 0:
                             print(f"{target.name} has been destroyed!")
-                            
 
     # Checking if enemy have landed on a health pack
     for pack in health_packs:
@@ -327,11 +352,11 @@ def draw_start_menu(screen):
     font = pygame.font.SysFont('arial', 40)  # Create a font object
     title = font.render('Space GAME', True, (255, 255, 255))  # Render the title text
     start_button = font.render('Click Escape to Begin', True, (255, 255, 255))  # Render the start instruction text
-    
+
     # Blit the title and start button text onto the screen at specified positions
     screen.blit(title, (SCREEN_WIDTH / 2 - title.get_width() / 2, SCREEN_HEIGHT / 3))
     screen.blit(start_button, (SCREEN_WIDTH / 2 - start_button.get_width() / 2, SCREEN_HEIGHT / 2))
-    
+
     pygame.display.update()  # Update the display to show the new drawings
 
 def draw_game_over_screen(screen):
@@ -340,12 +365,12 @@ def draw_game_over_screen(screen):
     game_over_title = font.render('Game Over', True, (255, 255, 255))  # Render the game over text
     restart_button = font.render('R - Restart', True, (255, 255, 255))  # Render the restart instruction text
     quit_button = font.render('Q - Quit', True, (255, 255, 255))  # Render the quit instruction text
-    
+
     # Blit the game over title, restart, and quit button texts onto the screen at specified positions
     screen.blit(game_over_title, (SCREEN_WIDTH / 2 - game_over_title.get_width() / 2, SCREEN_HEIGHT / 3))
     screen.blit(restart_button, (SCREEN_WIDTH / 2 - restart_button.get_width() / 2, SCREEN_HEIGHT / 2))
     screen.blit(quit_button, (SCREEN_WIDTH / 2 - quit_button.get_width() / 2, SCREEN_HEIGHT / 2 + 50))
-    
+
     pygame.display.update()  # Update the display to show the new drawings
 
 def reset_game():
@@ -423,7 +448,7 @@ while running:
                         player_end_turn(entities, grid_count)
                         print("Your turn to move!")
 
-        
+
         screen.fill((0, 0, 0))
 
         # Draw menu borders
@@ -517,6 +542,10 @@ while running:
         for pack in health_packs:
             pack.draw(screen, block_size, offset, sub_width)
 
+      # Draw Asteroids
+        for asteroid in asteroids:
+          asteroid.draw(screen, block_size, offset, sub_width)
+        
         mousex, mousey = pygame.mouse.get_pos()
         mousexx = (mousex - sub_width - offset - block_size/2)/block_size
         mouseyy = (mousey - offset - block_size/2)/block_size
