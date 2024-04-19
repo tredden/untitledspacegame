@@ -1,28 +1,25 @@
 # Space Game
 
 # Import and initialize the pygame library
-import sysconfig
-print(sysconfig.get_paths()["purelib"])
 import pygame
 import random
 import math
 
 # Import pygame.locals for easier access to key coordinates
-# Updated to conform to flake8 and black standards
-
 from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_RETURN,
-    K_ESCAPE,
     KEYDOWN,
     MOUSEBUTTONDOWN,
     QUIT,
+    K_ESCAPE,
+    K_RETURN,
 )
 
-#Spaceships
+# music
+pygame.mixer.init()
+pygame.mixer.music.load('./Music/Vortex.mp3')
+pygame.mixer.music.play(-1)
+
+# Spaceships
 pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
 bswidth = pl_ship.get_rect().width
 bsheight = pl_ship.get_rect().height
@@ -30,7 +27,7 @@ en_ship = pygame.image.load("./Images/Red Spaceship.png")
 eswidth = en_ship.get_rect().width
 esheight = en_ship.get_rect().height
 
-#Motherships
+# Motherships
 pl_mothership = pygame.image.load("./Images/Blue Mothership.png")
 bmwidth = pl_mothership.get_rect().width
 bmheight = pl_mothership.get_rect().height
@@ -38,12 +35,12 @@ en_mothership = pygame.image.load("./Images/Red Mothership.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
-targeting = False
+# Load the Health Pack image
+health_pack_image = pygame.image.load("./Images/Health Pack.png")
 
 # Base Class
 class Unit:
     def __init__(self, pos, name, type=None):
-
         self.name = name
         self.position = pos
         self.rotation = 0
@@ -53,8 +50,8 @@ class Unit:
             self.type = "Mothership"
             self.movement_range = 1
             self.attack_range = 3
-            self.maxhealth = 500
-            self.maxshields = 750
+            self.maxhealth = 250
+            self.maxshields = 300
             self.attack = 100
             self.attacksleft = 1
         else:
@@ -62,8 +59,8 @@ class Unit:
             self.movement_range = 3
             self.attack_range = 2
             self.maxhealth = 100
-            self.maxshields = 75
-            self.attack = 100
+            self.maxshields = 100
+            self.attack = 75
             self.attacksleft = 1
 
         self.health = self.maxhealth
@@ -90,7 +87,7 @@ class Player(Unit):
             self.image = pl_ship
         self.team = "Player"
 
-#Enemy Class
+# Enemy Class
 class Enemy(Unit):
     def __init__(self, pos, name, type=None):
         super().__init__(pos, name, type=type)
@@ -102,21 +99,60 @@ class Enemy(Unit):
 
     # Movement control for enemies
     def make_move(self, entities, grid_count):
-      valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-      valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
+        valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
 
-      if valid_moves:
-          new_pos = random.choice(valid_moves)
-          self.position = new_pos
-      else:
-          return None
+        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
+        moves = [move for move in moves if all(thing.position != move for thing in entities)]
+        moverange = self.movement_range
+        position = self.position
+        valid_moves = []
+        for square in moves: 
+            move = calcDist(square, position)
+            if move <= moverange:
+                valid_moves.append(square)
+        if valid_moves:
+            new_pos = random.choice(valid_moves)
+            self.position = new_pos
+        else:
+            return None
+
+
+# Health Pack power up
+class HealthPack:
+  def __init__(self, pos, block_size):
+      self.position = pos
+      self.image = pygame.image.load("./Images/Health Pack.png")
+      self.image = pygame.transform.scale(self.image, (block_size, block_size)) 
+
+  def draw(self, screen, block_size, offset, sub_width):
+      screen.blit(self.image, (
+          sub_width + self.position[0] * block_size + offset,
+          self.position[1] * block_size + offset)
+      )
+
+  def check_collision(self, player_ships, player_motherships):
+      for ship in player_ships + player_motherships:
+          if self.position == ship.position:
+              print(f"Power up was detected and it went to {ship.name}!")
+              initial_health = ship.health
+              ship.health += 20 #How much each health pack heals
+              if ship.health > ship.maxhealth:
+                  ship.health = ship.maxhealth
+              if initial_health < ship.health:
+                  print(f"{ship.name} has been healed to {ship.health} HP!")
+              health_packs.remove(self)
+              return True
+      return False
+
+
 
 # Function to check win condition 
 def check_win_condition(entities):
     # Check if there are any enemies left
     enemies_remaining = any(entity for entity in entities if entity.team == "Enemy")
     if not enemies_remaining:
-        print("YOU WON! All enemeies have been defeated! You have saved the galaxy!")
+        print("YOU WON! All enemies have been defeated! You have saved the galaxy!")
 
 
 # Function to check lose condition
@@ -152,7 +188,7 @@ def getAngle(a,b):
     except:
         return 0
 
-# show valid ship movement and attacking locations
+# Show valid ship movement and attacking locations
 nabes = [(0,1),(1,0),(0,-1),(-1,0)]
 
 def shipSelection(currShip):
@@ -190,8 +226,8 @@ def shipSelection(currShip):
             if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
                 attack_highlight.append((xx,yy))
                 search2.append(((xx,yy),atk-1))
-                
-                
+
+
 def attack(ship, unit):
     atk = ship.attack
     if unit.shields < atk:
@@ -202,7 +238,7 @@ def attack(ship, unit):
         unit.shields -= atk
     if unit.health < 0:
         unit.health = 0
-   
+        entities.remove(unit)
 
 class Animation():
     def __init__(self):
@@ -272,6 +308,7 @@ class Anim_Move(Animation):
         entity.isMoving = False
         yield None
         return
+        
 
 ### GAME INITIALIZATION ###
 pygame.init()
@@ -290,6 +327,15 @@ entities.append(Enemy((4,2), "Enemy Ship 2"))
 
 entities.append(Player((5, 7), "Blue Mothership", type="Mothership"))
 entities.append(Enemy((2, 0), "Red Mothership", type="Mothership"))
+
+# Placement for health packs and image icon size
+block_size = 75
+
+health_packs = [
+    HealthPack((2, 5), block_size),
+    HealthPack((1, 1), block_size),
+    HealthPack((6, 3), block_size)   
+]
 
 move_highlight=[]
 attack_highlight=[]
@@ -321,11 +367,27 @@ def enemy_move_and_attack(entities, grid_count):
             if(oldPos != entity.position):
                 yield Anim_Move(entity, oldPos, entity.position)
             for target in entities:
-                if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
-                    print(f"{entity.name} attacks {target.name}!")
-                    attack(entity, target)
-                    if target.health <= 0:
-                        print(f"{target.name} has been destroyed!")
+                if entity.attacksleft > 0:
+                    if target.team == "Player" and target.health > 0 and entity.health > 0 and calcDist(entity.position, target.position) <= entity.attack_range:
+                        print(f"{entity.name} attacks {target.name}!")
+                        attack(entity, target)
+                        if target.health <= 0:
+                            print(f"{target.name} has been destroyed!")
+                            entity.attacksleft -= 1
+
+    # Checking if enemy have landed on a health pack
+    for pack in health_packs:
+        pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
+
+def player_end_turn(entities, grid_count):
+    for entity in entities:
+        if entity.team == "Player":
+            entity.moves_left = entity.movement_range
+    # Checking if player have landed on a health pack
+    print("Checking if a spaceship have laned on a power up...")
+    for pack in health_packs:
+        pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
+
 
 end_generator = None # end turn object
 def end_turn(entities, grid_count):
@@ -341,6 +403,7 @@ def end_turn(entities, grid_count):
             check_win_condition(entities)  # checking win condition after player has reset
             check_lose_condition(entities)  # checking lose condition after player has reset
     print("Your turn to move!")
+    player_end_turn(entities, grid_count)
         
 
 running = True
@@ -401,6 +464,7 @@ while running:
                         current_player = "Enemy"
                         end_generator = end_turn(entities, grid_count)
 
+
     screen.fill((0, 0, 0))
 
     # Draw menu borders
@@ -417,7 +481,7 @@ while running:
 
     offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
-    #UI Text
+    # UI Text
     font = pygame.font.Font(pygame.font.get_default_font(), 24)
     if current_ship is not None:
         name = pygame.font.Font.render(font, current_ship.name, True, (255, 255, 255))
@@ -451,7 +515,7 @@ while running:
                 width=2
             )
 
-    # highlight movement squares
+    # Highlight movement squares
     for x, y in move_highlight:
         grid_color = (100, 100, 255, 100)
         pygame.draw.rect(
@@ -464,7 +528,7 @@ while running:
             width=2
         )
 
-    # highlight attack squares
+    # Highlight attack squares
     for x, y in attack_highlight:
         grid_color = (255, 100, 100, 100)
         pygame.draw.rect(
@@ -477,7 +541,7 @@ while running:
             width=2
         )
 
-    #selection highlight
+    # Selection highlight
     for x, y in selection_highlight:
         grid_color = (255, 255, 100, 100)
         pygame.draw.rect(
@@ -490,22 +554,9 @@ while running:
             width=2
         )
 
-
-    # show mouse-selected grid square
-    mousex, mousey = pygame.mouse.get_pos()
-    mousexx = (mousex - sub_width - offset - block_size/2)/block_size
-    mouseyy = (mousey - offset - block_size/2)/block_size
-    if mousexx > -0.5 and mouseyy > -0.5 and mousexx < grid_count - 0.5 and mouseyy < grid_count - 0.5:
-        pygame.draw.rect(
-            screen,
-            (200, 200, 0),
-            (
-                round(mousexx) * block_size + (sub_width + offset), 
-                round(mouseyy) * block_size + offset,
-                block_size, block_size
-            ),
-            width=5
-        )
+    # Draw Health Packs
+    for pack in health_packs:
+        pack.draw(screen, block_size, offset, sub_width)
 
     #do end trurn stuff
     if end_generator is not None:
