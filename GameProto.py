@@ -17,6 +17,9 @@ from pygame.locals import (
     K_q
 )
 
+# mu
+
+
 game_state = "start_menu"
 running = True
 clock = pygame.time.Clock()
@@ -431,7 +434,43 @@ def player_end_turn(entities, grid_count):
     print("Checking if a spaceship have laned on a power up...")
     for pack in health_packs:
         pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
+
+def draw_start_menu(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    title = font.render('Space GAME', True, (255, 255, 255))  # Render the title text
+    start_button = font.render('Click Escape to Begin', True, (255, 255, 255))  # Render the start instruction text
     
+    # Blit the title and start button text onto the screen at specified positions
+    screen.blit(title, (SCREEN_WIDTH / 2 - title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(start_button, (SCREEN_WIDTH / 2 - start_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    
+    pygame.display.update()  # Update the display to show the new drawings
+
+def draw_game_over_screen(screen):
+    screen.fill((0, 0, 0))  # Clear screen with black
+    font = pygame.font.SysFont('arial', 40)  # Create a font object
+    game_over_title = font.render('Game Over', True, (255, 255, 255))  # Render the game over text
+    restart_button = font.render('R - Restart', True, (255, 255, 255))  # Render the restart instruction text
+    quit_button = font.render('Q - Quit', True, (255, 255, 255))  # Render the quit instruction text
+    
+    # Blit the game over title, restart, and quit button texts onto the screen at specified positions
+    screen.blit(game_over_title, (SCREEN_WIDTH / 2 - game_over_title.get_width() / 2, SCREEN_HEIGHT / 3))
+    screen.blit(restart_button, (SCREEN_WIDTH / 2 - restart_button.get_width() / 2, SCREEN_HEIGHT / 2))
+    screen.blit(quit_button, (SCREEN_WIDTH / 2 - quit_button.get_width() / 2, SCREEN_HEIGHT / 2 + 50))
+    
+    pygame.display.update()  # Update the display to show the new drawings
+
+def reset_game():
+    global entities
+    entities = [
+        Player((5,3), "Player Ship 1"),
+        Player((2,6), "Player Ship 2"),
+        Enemy((2,3), "Enemy Ship 1"),
+        Enemy((4,2), "Enemy Ship 2"),
+        Player((5, 7), "Blue Mothership", type="Mothership"),
+        Enemy((2, 0), "Red Mothership", type="Mothership")
+    ]
 
 
 end_generator = None # end turn object
@@ -600,7 +639,6 @@ while running:
                     width=2
                 )
 
-
         # Highlight movement squares
         for x, y in move_highlight:
             grid_color = (100, 100, 255, 100)
@@ -711,7 +749,7 @@ while running:
 
         # Draw Asteroids
         for asteroid in asteroids:
-          asteroid.draw(screen, block_size, offset, sub_width)
+            asteroid.draw(screen, block_size, offset, sub_width)
         
         mousex, mousey = pygame.mouse.get_pos()
         mousexx = (mousex - sub_width - offset - block_size/2)/block_size
