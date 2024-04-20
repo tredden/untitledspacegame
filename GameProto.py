@@ -31,18 +31,18 @@ damage_sound = pygame.mixer.Sound("Sound Effects/bomb.mp3")
 attack_sound = pygame.mixer.Sound("Sound Effects/laser.mp3")
 
 # Spaceships
-pl_ship = pygame.image.load("./Images/Blue Spaceship.png")
+pl_ship = pygame.image.load("./Images/blueships1.png")
 bswidth = pl_ship.get_rect().width
 bsheight = pl_ship.get_rect().height
-en_ship = pygame.image.load("./Images/Red Spaceship.png")
+en_ship = pygame.image.load("./Images/redfighter0005.png")
 eswidth = en_ship.get_rect().width
 esheight = en_ship.get_rect().height
 
 # Motherships
-pl_mothership = pygame.image.load("./Images/Blue Mothership.png")
+pl_mothership = pygame.image.load("./Images/WB_baseu3_d0.png")
 bmwidth = pl_mothership.get_rect().width
 bmheight = pl_mothership.get_rect().height
-en_mothership = pygame.image.load("./Images/Red Mothership.png")
+en_mothership = pygame.image.load("./Images/tribase-u2-d0.png")
 emwidth = en_mothership.get_rect().width
 emheight = en_mothership.get_rect().height
 
@@ -106,6 +106,14 @@ class Player(Unit):
             self.image = pl_ship
         self.team = "Player"
 
+    def make_move(self, destination, asteroids):
+        if not any(asteroid.position == destination for asteroid in asteroids):
+            self.position = destination
+            return True
+        else:
+            print("Move blocked by asteroid!")
+            return False
+
 # Enemy Class
 class Enemy(Unit):
     def __init__(self, pos, name, type=None):
@@ -117,24 +125,17 @@ class Enemy(Unit):
         self.team = "Enemy"
 
     # Movement control for enemies
-    def make_move(self, entities, grid_count):
+    def make_move(self, entities, grid_count, asteroids):
         valid_moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-        valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities)]
+        valid_moves = [move for move in valid_moves if all(thing.position != move for thing in entities) and all(asteroid.position != move for asteroid in asteroids)]
 
-        moves = [(x, y) for x in range(grid_count) for y in range(grid_count)]
-        moves = [move for move in moves if all(thing.position != move for thing in entities)]
-        moverange = self.movement_range
-        position = self.position
-        valid_moves = []
-        for square in moves: 
-            move = calcDist(square, position)
-            if move <= moverange:
-                valid_moves.append(square)
         if valid_moves:
             new_pos = random.choice(valid_moves)
             self.position = new_pos
+            return True
         else:
-            return None
+            print("No valid moves available!")
+            return False
 
 # Health Pack power up
 class HealthPack:
@@ -228,7 +229,7 @@ def shipSelection(currShip):
         for nabe in nabes:
             xx,yy = (currPos[0]+nabe[0],currPos[1]+nabe[1])
             if(xx>=0 and yy>=0 and xx < grid_count and yy < grid_count and (xx,yy) not in done):
-                if(all(thing.position!=(xx,yy) for thing in entities)):
+                if(all(thing.position!=(xx,yy) for thing in entities) and all(asteroid.position != (xx, yy) for asteroid in asteroids)):
                     move_highlight.append((xx,yy))
                     search.append(((xx,yy),moves-1))
 
@@ -319,10 +320,10 @@ offset = SCREEN_HEIGHT/2 - (grid_count*(block_size)/2)
 
 running = True
 
-def enemy_move_and_attack(entities, grid_count):
+def enemy_move_and_attack(entities, grid_count, asteroids):
     for entity in entities:
         if entity.team == "Enemy":
-            entity.make_move(entities, grid_count)
+            entity.make_move(entities, grid_count, asteroids)
             entity.attacksleft = entity.attacksPerRound
             for target in entities:
                 if entity.attacksleft > 0:
@@ -337,7 +338,7 @@ def enemy_move_and_attack(entities, grid_count):
     for pack in health_packs:
         pack.check_collision([entity for entity in entities if entity.team == "Player"], [])
 
-def player_end_turn(entities, grid_count):
+def player_end_turn(entities, grid_count, asteroids):
     for entity in entities:
         if entity.team == "Player":
             entity.moves_left = entity.movement_range
@@ -407,10 +408,10 @@ while running:
                 if event.key == K_ESCAPE:
                     running = False
                 if event.key == K_RETURN:
-                    enemy_move_and_attack(entities, grid_count)
+                    enemy_move_and_attack(entities, grid_count, asteroids)
                     check_game_state(entities)  # checking win condition after enemy action
                     print("Your turn to move!")
-                    player_end_turn(entities, grid_count)
+                    player_end_turn(entities, grid_count, asteroids)
 
             if event.type == QUIT:
                 running = False
@@ -442,10 +443,10 @@ while running:
                                 check_game_state(entities)# checking lose condition after player action
                     # The end turn button have been pressed
                     elif end_turn_button_rect.collidepoint(mousex, mousey):
-                        enemy_move_and_attack(entities, grid_count)
+                        enemy_move_and_attack(entities, grid_count, asteroids)
                         check_game_state(entities)
                         print("Enemy's turn!")
-                        player_end_turn(entities, grid_count)
+                        player_end_turn(entities, grid_count, asteroids)
                         print("Your turn to move!")
 
 
